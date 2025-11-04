@@ -1,6 +1,6 @@
 # 项目开发规范
 
-> 版本: 1.0.0 | 更新: 2024-11-04
+> 版本: 1.0.0 | 更新: 2025-11-04
 
 ---
 
@@ -330,66 +330,3 @@ const value = useMemo(() => calculate(data), [data])
 // useCallback缓存函数
 const handleClick = useCallback(() => {}, [dependency])
 ```
-
----
-
-## 9. 常用命令
-
-### 开发环境
-```bash
-# 后端
-cd backend
-python -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-uvicorn app.main:app --reload
-
-# 前端
-cd frontend
-npm install
-npm run dev
-
-# 数据库迁移
-alembic revision --autogenerate -m "描述"
-alembic upgrade head
-```
-
-### 生产环境
-```bash
-# 启动
-docker-compose up -d
-
-# 初始化数据库
-docker-compose exec backend python init_db.py
-
-# 查看日志
-docker-compose logs -f
-
-# 停止
-docker-compose down
-
-# 备份数据库
-docker-compose exec postgres pg_dump -U postgres ecommerce_ops > backup.sql
-```
-
----
-
-## 附录
-
-### 文档职责
-
-- **README.md**: 项目简介、文档导航
-- **NORM.md**: 开发规范（本文档）
-- **DEPLOY.md**: 开发和部署步骤
-- **PROJECT_SUMMARY.md**: 项目进度
-
-### 团队协作
-
-- 代码审查：每个PR至少1人审查
-- 遵守规范：统一代码风格
-- 保持精简：不创建冗余文件
-
----
-
-**最后更新**: 2024-11-04  
-**版本**: 1.0.0

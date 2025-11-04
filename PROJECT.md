@@ -2,7 +2,7 @@
 
 > 记录当前项目开发进度：已完成功能、实现方式、待开发功能
 
-**最后更新**: 2024-11-04  
+**最后更新**: 2025-11-04  
 **项目版本**: 1.0.0
 
 ---
@@ -367,7 +367,7 @@ db.query(ShopProduct).filter(
 React 18.2
 ├── TypeScript 5.2
 ├── Vite 5.0
-├── Ant Design 5.12
+├── Ant Design 5.28 (实际安装版本)
 ├── ECharts 5.4 (图表)
 ├── Zustand 4.4 (状态管理)
 ├── Axios 1.6 (HTTP)
@@ -379,11 +379,11 @@ React 18.2
 ```
 FastAPI 0.108
 ├── Pydantic 2.5 (数据验证)
-├── SQLAlchemy 2.0 (ORM)
+├── SQLAlchemy 2.0.23 (ORM)
 ├── Alembic 1.13 (数据库迁移)
 ├── PostgreSQL 15
-├── Redis 5.0
-├── JWT (认证)
+├── Redis 7 (Docker容器)
+├── JWT (python-jose + passlib)
 ├── Pandas 2.1 (数据处理)
 └── Uvicorn 0.25 (ASGI服务器)
 ```
@@ -463,4 +463,7 @@ Docker 20.10+
 **项目状态**: ✅ 生产就绪  
 **核心功能**: ✅ 已完成  
 **可扩展性**: ⭐⭐⭐⭐⭐  
-**最后更新**: 2024-11-04
+**最后更新**: 2025-11-04
+
+---
+
