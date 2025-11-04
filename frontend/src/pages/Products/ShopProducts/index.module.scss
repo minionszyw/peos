@@ -1,0 +1,21 @@
+.shopProducts {
+  .header {
+    @include flex-between;
+    margin-bottom: $spacing-lg;
+
+    h2 {
+      font-size: $font-size-xl;
+      font-weight: 600;
+      color: $text-color;
+      margin: 0;
+    }
+  }
+
+  .toolbar {
+    margin-bottom: $spacing-md;
+    padding: $spacing-md;
+    background: $bg-color-light;
+    border-radius: $border-radius;
+  }
+}
+

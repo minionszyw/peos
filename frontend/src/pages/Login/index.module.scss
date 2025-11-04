@@ -1,0 +1,41 @@
+.loginContainer {
+  @include flex-center;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.loginCard {
+  width: 400px;
+  box-shadow: $box-shadow-lg;
+  border-radius: $border-radius-lg;
+}
+
+.loginHeader {
+  text-align: center;
+  margin-bottom: $spacing-xl;
+
+  h1 {
+    font-size: $font-size-xxl;
+    font-weight: 600;
+    color: $text-color;
+    margin-bottom: $spacing-sm;
+  }
+
+  p {
+    color: $text-color-secondary;
+    font-size: $font-size-base;
+  }
+}
+
+.loginFooter {
+  text-align: center;
+  margin-top: $spacing-lg;
+  padding-top: $spacing-lg;
+  border-top: 1px solid $border-color-light;
+
+  p {
+    color: $text-color-tertiary;
+    font-size: $font-size-sm;
+  }
+}
+

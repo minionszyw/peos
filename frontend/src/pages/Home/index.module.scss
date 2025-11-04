@@ -1,0 +1,14 @@
+.home {
+  h1 {
+    font-size: $font-size-xxl;
+    color: $text-color;
+    margin-bottom: $spacing-lg;
+  }
+
+  p {
+    font-size: $font-size-lg;
+    color: $text-color-secondary;
+    margin-bottom: $spacing-md;
+  }
+}
+

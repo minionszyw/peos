@@ -1,0 +1,22 @@
+.sider {
+  box-shadow: $box-shadow-base;
+}
+
+.logo {
+  @include flex-center;
+  height: $layout-header-height;
+  color: #fff;
+  font-size: $font-size-xl;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.05);
+  margin-bottom: $spacing-sm;
+}
+
+.logoIcon {
+  font-size: 24px;
+}
+
+.logoText {
+  margin-left: $spacing-sm;
+}
+

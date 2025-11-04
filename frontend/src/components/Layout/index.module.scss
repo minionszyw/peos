@@ -1,0 +1,18 @@
+.layout {
+  min-height: 100vh;
+}
+
+.content {
+  margin: 0;
+  padding: 0;
+  background: $bg-color-light;
+}
+
+.contentInner {
+  margin: $spacing-md;
+  padding: $spacing-lg;
+  background: $bg-color;
+  border-radius: $border-radius;
+  min-height: calc(100vh - #{$layout-header-height} - 40px - #{$spacing-md} * 2);
+}
+

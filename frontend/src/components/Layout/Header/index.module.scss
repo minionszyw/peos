@@ -1,0 +1,45 @@
+.header {
+  @include flex-between;
+  background: $bg-color;
+  padding: 0 $spacing-lg;
+  box-shadow: $box-shadow-sm;
+  height: $layout-header-height;
+  line-height: $layout-header-height;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.left {
+  @include flex-start;
+}
+
+.trigger {
+  font-size: 18px;
+  cursor: pointer;
+  @include transition(color);
+
+  &:hover {
+    color: $primary-color;
+  }
+}
+
+.right {
+  @include flex-end;
+}
+
+.userInfo {
+  cursor: pointer;
+  padding: 0 $spacing-sm;
+  @include transition(background-color);
+
+  &:hover {
+    background-color: $bg-color-light;
+  }
+}
+
+.username {
+  color: $text-color;
+  font-size: $font-size-base;
+}
+
