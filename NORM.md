@@ -1,0 +1,395 @@
+# 项目开发规范
+
+> 版本: 1.0.0 | 更新: 2024-11-04
+
+---
+
+## 1. 命名规范
+
+### Python
+```python
+# 文件名：小写_下划线
+user_service.py
+
+# 类名：PascalCase
+class UserService:
+    pass
+
+# 函数名：小写_下划线
+def get_user_by_id(user_id: int):
+    pass
+
+# 变量名：小写_下划线
+user_name = "admin"
+
+# 常量：大写_下划线
+MAX_UPLOAD_SIZE = 100 * 1024 * 1024
+
+# 私有变量：_下划线开头
+_cache = {}
+```
+
+### TypeScript
+```typescript
+// 文件名：
+// - 组件：PascalCase (Login.tsx)
+// - 工具：camelCase (request.ts)
+
+// 组件名：PascalCase
+const UserProfile: React.FC = () => {}
+
+// 函数名：camelCase
+const getUserById = (userId: number) => {}
+
+// 变量名：camelCase
+const userName = 'admin'
+
+// 常量：UPPER_SNAKE_CASE
+const MAX_UPLOAD_SIZE = 100
+
+// 接口：PascalCase
+interface User {}
+```
+
+### 数据库
+```sql
+-- 表名：小写_下划线（复数）
+users, shops, shop_products
+
+-- 字段名：小写_下划线
+user_id, created_at, cost_price
+
+-- 索引：idx_表名_字段名
+idx_users_username
+
+-- 外键：fk_表名_关联表名
+fk_shop_products_shops
+```
+
+---
+
+## 2. 目录结构
+
+### 后端
+```
+backend/
+├── app/
+│   ├── api/         # API路由
+│   ├── core/        # 配置
+│   ├── models/      # 数据库模型
+│   ├── schemas/     # Pydantic模式
+│   ├── services/    # 业务逻辑
+│   ├── utils/       # 工具函数
+│   └── main.py
+├── alembic/         # 数据库迁移
+├── requirements.txt
+└── Dockerfile
+```
+
+### 前端
+```
+frontend/
+├── src/
+│   ├── components/  # 通用组件
+│   ├── pages/       # 页面组件
+│   ├── services/    # API服务
+│   ├── stores/      # 状态管理
+│   ├── styles/      # SCSS样式
+│   ├── types/       # TypeScript类型
+│   ├── utils/       # 工具函数
+│   ├── constants/   # 常量定义
+│   ├── App.tsx
+│   └── main.tsx
+├── package.json
+└── Dockerfile
+```
+
+---
+
+## 3. Git 提交规范
+
+### Commit Message格式
+```
+<type>: <subject>
+
+type类型：
+- feat: 新功能
+- fix: 修复bug
+- docs: 文档更新
+- style: 代码格式
+- refactor: 重构
+- perf: 性能优化
+```
+
+### 示例
+```bash
+feat: 添加店铺批量导入功能
+fix: 修复批量改价验证错误
+docs: 更新部署文档
+refactor: 优化商品列表查询性能
+```
+
+---
+
+## 4. API 接口规范
+
+### RESTful 设计
+```
+GET     /api/shops           # 获取列表
+GET     /api/shops/{id}      # 获取详情
+POST    /api/shops           # 创建
+PUT     /api/shops/{id}      # 更新
+DELETE  /api/shops/{id}      # 删除
+
+# 批量操作
+POST    /api/products/shop/batch/status
+POST    /api/products/shop/batch/price
+
+# 查询筛选
+GET     /api/shops?platform=淘宝&status=active
+
+# 分页
+GET     /api/shops?skip=0&limit=20
+```
+
+### HTTP 状态码
+- `200 OK`: 成功
+- `201 Created`: 创建成功
+- `204 No Content`: 删除成功
+- `400 Bad Request`: 请求错误
+- `401 Unauthorized`: 未认证
+- `403 Forbidden`: 无权限
+- `404 Not Found`: 资源不存在
+- `422 Unprocessable Entity`: 验证失败
+- `500 Internal Server Error`: 服务器错误
+
+---
+
+## 5. 数据库规范
+
+### 必需字段
+```sql
+id           SERIAL PRIMARY KEY
+created_at   TIMESTAMP DEFAULT NOW()
+updated_at   TIMESTAMP DEFAULT NOW()
+```
+
+### 字段类型
+```sql
+VARCHAR(50)      -- 短文本
+VARCHAR(255)     -- 中等文本
+TEXT             -- 长文本
+INTEGER          -- 整数
+NUMERIC(10,2)    -- 金额
+BOOLEAN          -- 布尔值
+DATE             -- 日期
+TIMESTAMP        -- 时间戳
+```
+
+### 外键约束
+```sql
+FOREIGN KEY (shop_id) REFERENCES shops(id) ON DELETE CASCADE
+```
+
+### 索引
+```sql
+CREATE INDEX idx_shops_platform ON shops(platform);
+CREATE INDEX idx_products_sku ON warehouse_products(sku);
+```
+
+---
+
+## 6. 代码规范
+
+### Python
+```python
+# API路由规范
+@router.post("", response_model=ShopResponse)
+def create_shop(
+    shop_data: ShopCreate,
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user)
+):
+    """创建店铺"""
+    # 验证 → 创建 → 返回
+    pass
+
+# 数据验证
+class ShopCreate(BaseModel):
+    name: str = Field(..., min_length=1, max_length=100)
+    platform: str
+    
+    @validator('name')
+    def validate_name(cls, v):
+        return v.strip()
+```
+
+### TypeScript
+```typescript
+// React组件规范
+interface ComponentProps {
+  title: string
+  onSubmit?: () => void
+}
+
+const Component: React.FC<ComponentProps> = ({ title, onSubmit }) => {
+  const [loading, setLoading] = useState(false)
+  
+  return <div className={styles.container}>{title}</div>
+}
+
+export default Component
+```
+
+### SCSS
+```scss
+// 使用全局变量和混入
+@import '@/styles/variables.scss';
+@import '@/styles/mixins.scss';
+
+.container {
+  padding: $spacing-md;
+  
+  .header {
+    @include flex-between;
+  }
+}
+```
+
+---
+
+## 7. 安全规范
+
+### 认证
+```python
+# 使用JWT Token
+current_user = Depends(get_current_user)
+
+# 权限检查
+if current_user.role != "admin":
+    raise HTTPException(403, "权限不足")
+```
+
+### 数据验证
+```python
+# 使用Pydantic验证
+class ShopCreate(BaseModel):
+    name: str = Field(..., min_length=1, max_length=100)
+```
+
+### SQL注入防护
+```python
+# 使用ORM，避免拼接SQL
+# Good
+db.query(Shop).filter(Shop.name == user_input).first()
+
+# Bad
+db.execute(f"SELECT * FROM shops WHERE name = '{user_input}'")
+```
+
+### 文件上传
+```python
+# 验证文件类型
+if not file.filename.endswith(('.xlsx', '.xls', '.csv')):
+    raise HTTPException(400, "不支持的文件类型")
+
+# 限制文件大小
+if file.size > MAX_UPLOAD_SIZE:
+    raise HTTPException(400, "文件过大")
+```
+
+---
+
+## 8. 性能优化
+
+### 数据库
+```python
+# 使用索引
+CREATE INDEX idx_products_sku ON warehouse_products(sku);
+
+# 避免N+1查询
+shops = db.query(Shop).options(joinedload(Shop.products)).all()
+
+# 分页查询
+query.offset(skip).limit(limit).all()
+
+# 批量操作
+db.bulk_insert_mappings(Product, product_list)
+```
+
+### 前端
+```typescript
+// React.memo避免重渲染
+export const Component = React.memo(({ data }) => {
+  return <div>{data}</div>
+})
+
+// useMemo缓存计算
+const value = useMemo(() => calculate(data), [data])
+
+// useCallback缓存函数
+const handleClick = useCallback(() => {}, [dependency])
+```
+
+---
+
+## 9. 常用命令
+
+### 开发环境
+```bash
+# 后端
+cd backend
+python -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+uvicorn app.main:app --reload
+
+# 前端
+cd frontend
+npm install
+npm run dev
+
+# 数据库迁移
+alembic revision --autogenerate -m "描述"
+alembic upgrade head
+```
+
+### 生产环境
+```bash
+# 启动
+docker-compose up -d
+
+# 初始化数据库
+docker-compose exec backend python init_db.py
+
+# 查看日志
+docker-compose logs -f
+
+# 停止
+docker-compose down
+
+# 备份数据库
+docker-compose exec postgres pg_dump -U postgres ecommerce_ops > backup.sql
+```
+
+---
+
+## 附录
+
+### 文档职责
+
+- **README.md**: 项目简介、文档导航
+- **NORM.md**: 开发规范（本文档）
+- **DEPLOY.md**: 开发和部署步骤
+- **PROJECT_SUMMARY.md**: 项目进度
+
+### 团队协作
+
+- 代码审查：每个PR至少1人审查
+- 遵守规范：统一代码风格
+- 保持精简：不创建冗余文件
+
+---
+
+**最后更新**: 2024-11-04  
+**版本**: 1.0.0

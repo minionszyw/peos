@@ -1,137 +1,90 @@
-# 电商运营系统 - 部署指南
+# 开发部署指南
 
-## 系统概述
+> 详细记录开发环境配置和生产环境部署步骤
 
-这是一个为30人团队设计的电商运营管理系统，支持本地服务器部署，帮助运营团队高效管理30家店铺和9万+商品。
+---
 
-## 技术栈
+## 一、开发环境配置
 
-### 前端
-- React 18 + TypeScript
-- Vite 5
-- Ant Design 5
-- ECharts 5
-- SCSS模块化样式
-- Zustand状态管理
+### 前置要求
 
-### 后端
-- FastAPI 0.100+
-- PostgreSQL 15
-- SQLAlchemy 2.0
-- Alembic数据库迁移
-- JWT认证
-- Pandas数据处理
+- Node.js 18+
+- Python 3.11+
+- Docker & Docker Compose（用于数据库和Redis）
 
-### 部署
-- Docker + Docker Compose
-- Nginx反向代理
+### 快速开始（推荐）🚀
 
-## 功能模块
+**使用一键启动脚本，自动完成所有配置和启动步骤：**
 
-### ✅ 已完成功能
-
-1. **用户认证系统**
-   - JWT token认证
-   - 登录/登出
-   - 路由守卫
-   - 默认管理员账号
-
-2. **店铺管理**
-   - 店铺CRUD操作
-   - 店铺筛选
-   - 管理员分配
-
-3. **数据导入**
-   - Excel/CSV文件上传
-   - 仓库商品导入
-   - 店铺商品导入
-   - 库存数据导入
-   - 销售数据导入
-   - 导入历史记录
-   - 错误提示
-
-4. **商品管理**
-   - 店铺商品列表
-   - 批量上下架
-   - 批量改价
-   - 商品筛选（按店铺、状态）
-   - 商品搜索
-   - 单品编辑
-
-5. **基础架构**
-   - 响应式布局
-   - 侧边栏导航
-   - 面包屑导航
-   - SCSS样式系统
-   - 统一的API错误处理
-
-### 📋 可扩展功能
-
-- 操作日志系统
-- 自定义工作表
-- 数据看板（销售趋势、商品排行）
-- 周报生成
-- 数据导出
-- 虚拟滚动优化
-
-## 快速开始
-
-### 前置条件
-
-- Docker 20.10+
-- Docker Compose 2.0+
-- Node.js 18+ (仅开发环境)
-- Python 3.11+ (仅开发环境)
-
-### 生产环境部署（推荐）
-
-1. **克隆项目**
 ```bash
-cd /home/w/Peos
+# 一键启动所有开发服务（前端、后端、数据库）
+./start-dev.sh
+
+# 一键停止所有开发服务
+./stop-dev.sh
 ```
 
-2. **配置环境变量**
+**脚本功能：**
+
+`start-dev.sh` 会自动执行以下操作：
+- ✓ 检查系统依赖（Docker、Python、Node.js等）
+- ✓ 启动 PostgreSQL 和 Redis 容器
+- ✓ 创建并配置 Python 虚拟环境
+- ✓ 安装后端依赖（包括版本兼容性修复）
+- ✓ 配置环境变量（自动适配本地开发环境）
+- ✓ 初始化数据库和创建管理员账户
+- ✓ 启动后端开发服务器（端口 8000）
+- ✓ 安装前端依赖
+- ✓ 启动前端开发服务器（端口 3000）
+
+`stop-dev.sh` 会停止所有服务：
+- ✓ 停止前端服务（释放端口 3000）
+- ✓ 停止后端服务（释放端口 8000）
+- ✓ 停止 PostgreSQL 和 Redis 容器
+
+**启动后访问：**
+- 前端应用：http://localhost:3000
+- 后端API：http://localhost:8000
+- API文档：http://localhost:8000/docs
+- 默认账号：`admin` / `admin123`
+
+**日志查看：**
 ```bash
-cp backend/.env.example backend/.env
-# 编辑 .env 文件，修改数据库密码、JWT密钥等
-vim backend/.env
+# 查看后端日志
+tail -f backend.log
+
+# 查看前端日志
+tail -f frontend.log
 ```
 
-3. **启动所有服务**
-```bash
-docker-compose up -d
-```
+---
 
-4. **初始化数据库**
-```bash
-docker-compose exec backend python init_db.py
-```
+### 手动启动（高级）
 
-5. **访问系统**
-```
-http://localhost 或 http://your-server-ip
-```
+如果需要单独启动某个服务，可以参考以下步骤：
 
-6. **默认账号**
-```
-用户名：admin
-密码：admin123
-```
-
-### 开发环境
-
-#### 后端开发
+### 1. 后端开发环境
 
 ```bash
 cd backend
+
+# 创建虚拟环境
+python -m venv venv
+
+# 激活虚拟环境
+# Linux/Mac:
+source venv/bin/activate
+# Windows:
+# venv\Scripts\activate
 
 # 安装依赖
 pip install -r requirements.txt
 
 # 配置环境变量
 cp .env.example .env
+# 编辑 .env 文件，修改数据库配置等
 
-# 启动数据库和Redis
+# 启动数据库和Redis（使用Docker）
 docker-compose up -d postgres redis
 
 # 初始化数据库
@@ -141,7 +94,10 @@ python init_db.py
 uvicorn app.main:app --reload --port 8000
 ```
 
-#### 前端开发
+**访问**: http://localhost:8000  
+**API文档**: http://localhost:8000/docs
+
+### 2. 前端开发环境
 
 ```bash
 cd frontend
@@ -149,58 +105,20 @@ cd frontend
 # 安装依赖
 npm install
 
+# 配置环境变量（可选）
+cp .env.example .env
+
 # 启动开发服务器
 npm run dev
 ```
 
-访问 http://localhost:3000
+**访问**: http://localhost:3000
 
-## Docker服务说明
-
-### 服务列表
-
-- **postgres**: PostgreSQL 15数据库
-- **redis**: Redis 7缓存
-- **backend**: FastAPI后端服务（端口8000）
-- **frontend**: React前端服务（端口80）
-- **nginx**: 反向代理（端口8080，可选）
-
-### 常用命令
+### 3. 数据库迁移
 
 ```bash
-# 启动所有服务
-docker-compose up -d
-
-# 查看服务状态
-docker-compose ps
-
-# 查看日志
-docker-compose logs -f backend
-docker-compose logs -f frontend
-
-# 停止所有服务
-docker-compose stop
-
-# 重启服务
-docker-compose restart backend
-
-# 停止并删除所有容器
-docker-compose down
-
-# 停止并删除所有容器和数据
-docker-compose down -v
-```
-
-## 数据库迁移
-
-如果修改了数据库模型，需要创建和应用迁移：
-
-```bash
-# 进入后端容器
-docker-compose exec backend bash
-
 # 创建迁移文件
-alembic revision --autogenerate -m "描述变更"
+alembic revision --autogenerate -m "描述变更内容"
 
 # 应用迁移
 alembic upgrade head
@@ -209,178 +127,466 @@ alembic upgrade head
 alembic downgrade -1
 ```
 
-## 目录结构
+---
 
-```
-Peos/
-├── backend/                 # 后端代码
-│   ├── app/
-│   │   ├── api/            # API路由
-│   │   ├── core/           # 核心配置
-│   │   ├── models/         # 数据库模型
-│   │   ├── schemas/        # Pydantic模式
-│   │   ├── services/       # 业务逻辑
-│   │   └── main.py         # 应用入口
-│   ├── alembic/            # 数据库迁移
-│   ├── requirements.txt    # Python依赖
-│   ├── Dockerfile         # 后端镜像
-│   └── init_db.py         # 数据库初始化
-├── frontend/               # 前端代码
-│   ├── src/
-│   │   ├── components/    # 通用组件
-│   │   ├── pages/         # 页面组件
-│   │   ├── services/      # API服务
-│   │   ├── stores/        # 状态管理
-│   │   ├── styles/        # SCSS样式
-│   │   ├── types/         # TypeScript类型
-│   │   └── utils/         # 工具函数
-│   ├── package.json       # npm依赖
-│   └── Dockerfile        # 前端镜像
-├── docker-compose.yml     # Docker编排
-├── nginx.conf            # Nginx配置
-└── README.md            # 项目说明
+## 二、生产环境部署
+
+### 前置要求
+
+- Docker 20.10+
+- Docker Compose 2.0+
+- 服务器最低配置：2核4G内存
+
+### 1. 快速部署
+
+```bash
+# 克隆或上传项目到服务器
+cd /home/w/Peos
+
+# 配置环境变量（重要！）
+cp backend/.env.example backend/.env
+vim backend/.env
+# 修改以下配置：
+# - POSTGRES_PASSWORD: 数据库密码（必须修改）
+# - SECRET_KEY: JWT密钥（必须修改，使用长随机字符串）
+
+# 启动所有服务
+docker-compose up -d
+
+# 初始化数据库
+docker-compose exec backend python init_db.py
 ```
 
-## 数据导入说明
+**访问**: http://your-server-ip  
+**默认账号**: admin / admin123
+
+### 2. 环境变量配置
+
+编辑 `backend/.env`:
+
+```bash
+# 数据库配置（必须修改密码）
+POSTGRES_SERVER=postgres
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=your_secure_password_here  # 修改为强密码
+POSTGRES_DB=ecommerce_ops
+POSTGRES_PORT=5432
+
+# Redis配置
+REDIS_HOST=redis
+REDIS_PORT=6379
+
+# JWT配置（必须修改密钥）
+SECRET_KEY=your-secret-key-use-random-string-at-least-32-chars  # 修改为随机字符串
+ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=10080
+
+# 文件上传配置
+UPLOAD_DIR=uploads
+MAX_UPLOAD_SIZE=104857600
+```
+
+### 3. Docker Compose 服务说明
+
+```yaml
+服务列表：
+- postgres:15-alpine    # PostgreSQL数据库
+- redis:7-alpine       # Redis缓存
+- backend              # FastAPI后端
+- frontend             # React前端
+- nginx（可选）         # 反向代理
+```
+
+### 4. 端口映射
+
+- **前端**: 80端口（http://localhost）
+- **后端**: 8000端口（http://localhost:8000）
+- **数据库**: 5432端口（仅内部访问）
+- **Redis**: 6379端口（仅内部访问）
+
+如需修改端口，编辑 `docker-compose.yml`:
+
+```yaml
+services:
+  frontend:
+    ports:
+      - "8080:80"  # 修改为其他端口
+```
+
+---
+
+## 三、常用操作命令
+
+### 服务管理
+
+```bash
+# 启动所有服务
+docker-compose up -d
+
+# 停止所有服务
+docker-compose down
+
+# 重启服务
+docker-compose restart backend
+docker-compose restart frontend
+
+# 查看服务状态
+docker-compose ps
+
+# 查看日志
+docker-compose logs -f
+docker-compose logs -f backend
+docker-compose logs -f frontend
+```
+
+### 数据库操作
+
+```bash
+# 进入数据库
+docker-compose exec postgres psql -U postgres ecommerce_ops
+
+# 备份数据库
+docker-compose exec postgres pg_dump -U postgres ecommerce_ops > backup_$(date +%Y%m%d).sql
+
+# 恢复数据库
+docker-compose exec -T postgres psql -U postgres ecommerce_ops < backup_20240101.sql
+
+# 查看数据库大小
+docker-compose exec postgres psql -U postgres -c "\l+"
+```
+
+### 容器操作
+
+```bash
+# 进入后端容器
+docker-compose exec backend bash
+
+# 进入前端容器
+docker-compose exec frontend sh
+
+# 查看容器资源使用
+docker stats
+
+# 清理无用镜像
+docker system prune -a
+```
+
+---
+
+## 四、数据导入说明
 
 ### 支持的数据类型
 
 1. **仓库商品** (warehouse_products)
-   - 必填列：sku, name
-   - 可选列：category, cost_price, spec
+   - 必填: sku, name
+   - 可选: category, cost_price, spec
 
 2. **店铺商品** (shop_products)
-   - 必填列：shop_id, sku, title, price
-   - 可选列：product_url, status, stock
+   - 必填: shop_id, sku, title, price
+   - 可选: product_url, status, stock
 
 3. **库存数据** (inventory)
-   - 必填列：sku, quantity
-   - 可选列：warehouse_location
+   - 必填: sku, quantity
+   - 可选: warehouse_location
 
 4. **销售数据** (sales)
-   - 必填列：shop_id, shop_product_id, quantity, amount, sale_date
-   - 可选列：order_id, profit
+   - 必填: shop_id, shop_product_id, quantity, amount, sale_date
+   - 可选: order_id, profit
 
-### 导入流程
+### 导入步骤
 
-1. 登录系统
-2. 进入"数据导入"页面
-3. 选择导入类型
-4. 点击"查看模板"了解数据格式
-5. 上传准备好的Excel或CSV文件
+1. 准备Excel或CSV文件（包含必填列）
+2. 登录系统
+3. 进入"数据导入"页面
+4. 选择导入类型
+5. 上传文件
 6. 点击"开始导入"
-7. 查看导入结果和错误信息
+7. 查看导入结果
 
-## 性能优化建议
+### Excel模板示例
+
+**仓库商品模板**:
+| sku | name | category | cost_price | spec |
+|-----|------|----------|------------|------|
+| SKU001 | 商品名称 | 分类 | 100.00 | 规格说明 |
+
+**店铺商品模板**:
+| shop_id | sku | title | price | status | stock |
+|---------|-----|-------|-------|--------|-------|
+| 1 | SKU001 | 商品标题 | 150.00 | on_shelf | 100 |
+
+---
+
+## 五、性能优化
 
 ### 数据库优化
 
-1. **添加索引**（已在模型中定义）
-   - 商品SKU
-   - 店铺ID
-   - 销售日期
-   - 用户名
+```sql
+-- 查看慢查询
+SELECT * FROM pg_stat_statements ORDER BY total_time DESC LIMIT 10;
 
-2. **定期清理**
-   - 旧的操作日志
-   - 临时文件
+-- 添加索引
+CREATE INDEX idx_products_sku ON warehouse_products(sku);
+CREATE INDEX idx_sales_date ON sales(sale_date);
 
-3. **连接池配置**
-   - 已配置pool_size=10
-   - 可根据实际负载调整
-
-### 前端优化
-
-1. **表格虚拟滚动**（针对超大数据量）
-   - 使用Ant Design Table的虚拟滚动
-   - 分页加载
-
-2. **图片懒加载**
-   - 商品图片延迟加载
-
-3. **代码分割**
-   - 路由级别的懒加载（已实现）
-
-## 安全建议
-
-1. **修改默认密码**
-   - 首次登录后立即修改admin密码
-
-2. **配置强密钥**
-   - 修改.env中的SECRET_KEY为随机字符串
-
-3. **数据库密码**
-   - 使用强密码
-   - 定期更换
-
-4. **HTTPS配置**
-   - 生产环境使用SSL证书
-   - 配置Nginx SSL
-
-5. **防火墙设置**
-   - 只开放必要端口
-   - 限制数据库访问
-
-## 备份策略
-
-### 数据库备份
-
-```bash
-# 手动备份
-docker-compose exec postgres pg_dump -U postgres ecommerce_ops > backup_$(date +%Y%m%d).sql
-
-# 恢复备份
-docker-compose exec -T postgres psql -U postgres ecommerce_ops < backup_20240101.sql
+-- 清理旧数据（定期执行）
+DELETE FROM operation_logs WHERE created_at < NOW() - INTERVAL '90 days';
 ```
 
-### 自动备份（建议）
+### Docker优化
+
+```bash
+# 限制容器资源
+docker-compose.yml:
+services:
+  backend:
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+
+# 查看容器资源使用
+docker stats
+```
+
+---
+
+## 六、安全配置
+
+### 1. 修改默认密码
+
+```bash
+# 首次登录后立即修改admin密码
+# 在系统中：个人信息 → 修改密码
+```
+
+### 2. 配置防火墙
+
+```bash
+# 只开放必要端口
+sudo ufw allow 80/tcp
+sudo ufw allow 443/tcp
+sudo ufw enable
+```
+
+### 3. 配置HTTPS（推荐）
+
+使用Nginx + Let's Encrypt:
+
+```bash
+# 安装certbot
+sudo apt install certbot python3-certbot-nginx
+
+# 获取证书
+sudo certbot --nginx -d your-domain.com
+
+# 配置自动续期
+sudo certbot renew --dry-run
+```
+
+### 4. 定期备份
 
 创建定时任务（crontab）:
+
 ```bash
+# 编辑定时任务
+crontab -e
+
 # 每天凌晨2点备份
-0 2 * * * cd /home/w/Peos && docker-compose exec postgres pg_dump -U postgres ecommerce_ops > /backup/ecommerce_$(date +\%Y\%m\%d).sql
+0 2 * * * cd /home/w/Peos && docker-compose exec postgres pg_dump -U postgres ecommerce_ops > /backup/db_$(date +\%Y\%m\%d).sql
 ```
 
-## 故障排查
+---
 
-### 常见问题
+## 七、故障排查
 
-1. **无法连接数据库**
-   - 检查PostgreSQL容器是否运行
-   - 检查.env中的数据库配置
+### 1. 无法连接数据库
 
-2. **前端无法访问后端API**
-   - 检查CORS配置
-   - 检查Nginx配置
+**症状**: 后端启动失败，日志显示数据库连接错误
 
-3. **文件上传失败**
-   - 检查uploads目录权限
-   - 检查文件大小限制
+**解决**:
+```bash
+# 检查PostgreSQL容器状态
+docker-compose ps postgres
 
-4. **内存不足**
-   - 调整Docker内存限制
-   - 优化查询语句
+# 查看PostgreSQL日志
+docker-compose logs postgres
 
-## 技术支持
+# 重启PostgreSQL
+docker-compose restart postgres
 
-如有问题，请检查：
-1. Docker日志：`docker-compose logs`
-2. 数据库连接：`docker-compose exec postgres psql -U postgres`
-3. 后端API文档：http://localhost:8000/docs
+# 检查数据库配置
+docker-compose exec postgres psql -U postgres -l
+```
 
-## 系统要求
+### 2. 前端页面空白
 
-### 最小配置
-- CPU: 2核
-- 内存: 4GB
-- 硬盘: 20GB
+**症状**: 访问前端显示空白页面
 
-### 推荐配置
-- CPU: 4核+
-- 内存: 8GB+
-- 硬盘: 50GB+ SSD
+**解决**:
+```bash
+# 检查前端容器状态
+docker-compose ps frontend
 
-## 许可证
+# 查看前端日志
+docker-compose logs frontend
 
-本项目为公司内部使用，禁止外部传播。
+# 检查后端API是否正常
+curl http://localhost:8000/health
 
+# 清除浏览器缓存，强制刷新（Ctrl+Shift+R）
+
+# 重启前端服务
+docker-compose restart frontend
+```
+
+### 3. 导入数据失败
+
+**症状**: Excel文件上传后导入失败
+
+**解决**:
+- 检查Excel文件格式（必填列是否存在）
+- 查看导入历史中的错误信息
+- 查看后端日志: `docker-compose logs backend`
+- 确保数据格式正确（如日期格式、数字格式）
+
+### 4. 内存不足
+
+**症状**: 容器频繁重启，系统响应缓慢
+
+**解决**:
+```bash
+# 查看系统资源
+free -h
+df -h
+
+# 查看Docker资源使用
+docker stats
+
+# 限制容器内存（修改docker-compose.yml）
+services:
+  backend:
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+
+# 清理无用数据
+docker system prune -a
+```
+
+### 5. 端口被占用
+
+**症状**: docker-compose启动失败，提示端口已被占用
+
+**解决**:
+```bash
+# 查看端口占用
+sudo lsof -i :80
+sudo lsof -i :8000
+
+# 停止占用端口的进程
+sudo kill -9 PID
+
+# 或修改docker-compose.yml中的端口映射
+```
+
+---
+
+## 八、更新升级
+
+### 代码更新
+
+```bash
+# 拉取最新代码
+git pull
+
+# 重新构建镜像
+docker-compose build
+
+# 重启服务
+docker-compose down
+docker-compose up -d
+
+# 应用数据库迁移
+docker-compose exec backend alembic upgrade head
+```
+
+### 依赖更新
+
+```bash
+# 更新后端依赖
+cd backend
+pip install -r requirements.txt --upgrade
+
+# 更新前端依赖
+cd frontend
+npm update
+
+# 重新构建
+docker-compose build
+```
+
+---
+
+## 九、监控维护
+
+### 日志管理
+
+```bash
+# 查看实时日志
+docker-compose logs -f --tail=100
+
+# 导出日志
+docker-compose logs > logs_$(date +%Y%m%d).txt
+
+# 清理旧日志
+docker-compose logs --tail=0
+```
+
+### 定期维护
+
+```bash
+# 每周执行一次
+# 1. 备份数据库
+# 2. 清理旧日志
+# 3. 检查磁盘空间
+# 4. 更新系统补丁
+```
+
+---
+
+## 十、技术支持
+
+### 查看系统信息
+
+```bash
+# Docker版本
+docker --version
+docker-compose --version
+
+# 系统信息
+uname -a
+free -h
+df -h
+```
+
+### 常用检查命令
+
+```bash
+# 检查所有服务状态
+docker-compose ps
+
+# 检查网络连接
+docker network ls
+docker network inspect peos_app-network
+
+# 检查数据卷
+docker volume ls
+```
+
+---
+
+**最后更新**: 2024-11-04  
+**适用版本**: 1.0.0

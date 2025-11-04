@@ -11,6 +11,16 @@ class ImportService:
     """数据导入服务类"""
 
     @staticmethod
+    def read_file(file_path: str) -> pd.DataFrame:
+        """
+        根据文件扩展名读取Excel或CSV文件
+        """
+        if file_path.endswith('.csv'):
+            return pd.read_csv(file_path)
+        else:
+            return pd.read_excel(file_path)
+
+    @staticmethod
     def validate_and_import_warehouse_products(
         file_path: str,
         db: Session
@@ -23,8 +33,8 @@ class ImportService:
         success_count = 0
         
         try:
-            # 读取Excel文件
-            df = pd.read_excel(file_path)
+            # 读取文件
+            df = ImportService.read_file(file_path)
             total_rows = len(df)
             
             # 验证必需列
@@ -88,7 +98,7 @@ class ImportService:
         success_count = 0
         
         try:
-            df = pd.read_excel(file_path)
+            df = ImportService.read_file(file_path)
             total_rows = len(df)
             
             # 验证必需列
@@ -153,7 +163,7 @@ class ImportService:
         success_count = 0
         
         try:
-            df = pd.read_excel(file_path)
+            df = ImportService.read_file(file_path)
             total_rows = len(df)
             
             # 验证必需列
@@ -220,9 +230,9 @@ class ImportService:
         success_count = 0
         
         try:
-            df = pd.read_excel(file_path)
+            df = ImportService.read_file(file_path)
             total_rows = len(df)
-            
+
             # 验证必需列
             required_columns = ['shop_id', 'shop_product_id', 'quantity', 'amount', 'sale_date']
             missing_columns = [col for col in required_columns if col not in df.columns]

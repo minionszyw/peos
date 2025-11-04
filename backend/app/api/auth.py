@@ -22,7 +22,7 @@ def login(login_data: LoginRequest, db: Session = Depends(get_db)):
         )
     
     # 生成token
-    access_token = create_access_token(data={"sub": user.id})
+    access_token = create_access_token(data={"sub": str(user.id)})
     
     return Token(
         access_token=access_token,

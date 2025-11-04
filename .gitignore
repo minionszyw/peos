@@ -17,6 +17,7 @@ ENV/
 # IDE
 .vscode/
 .idea/
+.cursor/
 *.swp
 *.swo
 *~
@@ -36,6 +37,12 @@ build/
 # 日志
 *.log
 logs/
+
+# 开发脚本生成的文件
+.backend.pid
+.frontend.pid
+backend.log
+frontend.log
 
 # 数据库
 *.db
