@@ -4,20 +4,6 @@
 
 电商运营管理系统，支持30人团队管理30家店铺、9万+商品，提供数据导入、商品管理、批量操作等核心功能。
 
-### 技术栈
-
-**前端**: React 18 + TypeScript + Ant Design + SCSS  
-**后端**: FastAPI + PostgreSQL + SQLAlchemy + Pandas  
-**部署**: Docker + Docker Compose
-
-### 核心功能
-
-- ✅ 用户认证（JWT）
-- ✅ 店铺管理（增删改查）
-- ✅ 数据导入（Excel/CSV：仓库商品、店铺商品、库存、销售）
-- ✅ 商品管理（批量上下架、批量改价）
-- ✅ 完整的布局系统
-
 ### 快速启动
 
 **开发环境（推荐）：**
@@ -57,9 +43,10 @@ docker-compose exec backend python init_db.py
 
 | 文档 | 说明 |
 |------|------|
-| [DEPLOY.md](DEPLOY.md) | 开发环境配置、生产环境部署、常用命令、数据导入说明、性能优化、安全配置、故障排查、更新升级、监控维护、技术支持 |
+| [DEPLOY.md](DEPLOY.md) | 开发环境配置、生产环境部署、常用命令、更新升级 |
 | [NORM.md](NORM.md) | 开发规范（命名、目录、Git、API、数据库、代码、安全、性能） |
-| [PROJECT.md](PROJECT.md) | 已完成功能、待开发功能、技术架构、性能指标、开发统计、下一步计划 |
+| [PROJECT.md](PROJECT.md) | 技术架构、项目需求、已完成功能、待开发功能、 |
+| [README.md](README.md) | 项目简介、快速启动、文档导航 |
 
 ---
 

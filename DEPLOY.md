@@ -1,10 +1,6 @@
 # 开发部署指南
 
-> 详细记录开发环境配置和生产环境部署步骤
-
----
-
-## 一、开发环境配置
+## 开发环境配置
 
 ### 前置要求
 
@@ -129,7 +125,7 @@ alembic downgrade -1
 
 ---
 
-## 二、生产环境部署
+## 生产环境部署
 
 ### 前置要求
 
@@ -215,7 +211,7 @@ services:
 
 ---
 
-## 三、常用操作命令
+## 常用操作命令
 
 ### 服务管理
 
@@ -273,228 +269,7 @@ docker system prune -a
 
 ---
 
-## 四、数据导入说明
-
-### 支持的数据类型
-
-1. **仓库商品** (warehouse_products)
-   - 必填: sku, name
-   - 可选: category, cost_price, spec
-
-2. **店铺商品** (shop_products)
-   - 必填: shop_id, sku, title, price
-   - 可选: product_url, status, stock
-
-3. **库存数据** (inventory)
-   - 必填: sku, quantity
-   - 可选: warehouse_location
-
-4. **销售数据** (sales)
-   - 必填: shop_id, shop_product_id, quantity, amount, sale_date
-   - 可选: order_id, profit
-
-### 导入步骤
-
-1. 准备Excel或CSV文件（包含必填列）
-2. 登录系统
-3. 进入"数据导入"页面
-4. 选择导入类型
-5. 上传文件
-6. 点击"开始导入"
-7. 查看导入结果
-
-### Excel模板示例
-
-**仓库商品模板**:
-| sku | name | category | cost_price | spec |
-|-----|------|----------|------------|------|
-| SKU001 | 商品名称 | 分类 | 100.00 | 规格说明 |
-
-**店铺商品模板**:
-| shop_id | sku | title | price | status | stock |
-|---------|-----|-------|-------|--------|-------|
-| 1 | SKU001 | 商品标题 | 150.00 | on_shelf | 100 |
-
----
-
-## 五、性能优化
-
-### 数据库优化
-
-```sql
--- 查看慢查询
-SELECT * FROM pg_stat_statements ORDER BY total_time DESC LIMIT 10;
-
--- 添加索引
-CREATE INDEX idx_products_sku ON warehouse_products(sku);
-CREATE INDEX idx_sales_date ON sales(sale_date);
-
--- 清理旧数据（定期执行）
-DELETE FROM operation_logs WHERE created_at < NOW() - INTERVAL '90 days';
-```
-
-### Docker优化
-
-```bash
-# 限制容器资源
-docker-compose.yml:
-services:
-  backend:
-    deploy:
-      resources:
-        limits:
-          cpus: '2'
-          memory: 2G
-
-# 查看容器资源使用
-docker stats
-```
-
----
-
-## 六、安全配置
-
-### 1. 修改默认密码
-
-```bash
-# 首次登录后立即修改admin密码
-# 在系统中：个人信息 → 修改密码
-```
-
-### 2. 配置防火墙
-
-```bash
-# 只开放必要端口
-sudo ufw allow 80/tcp
-sudo ufw allow 443/tcp
-sudo ufw enable
-```
-
-### 3. 配置HTTPS（推荐）
-
-使用Nginx + Let's Encrypt:
-
-```bash
-# 安装certbot
-sudo apt install certbot python3-certbot-nginx
-
-# 获取证书
-sudo certbot --nginx -d your-domain.com
-
-# 配置自动续期
-sudo certbot renew --dry-run
-```
-
-### 4. 定期备份
-
-创建定时任务（crontab）:
-
-```bash
-# 编辑定时任务
-crontab -e
-
-# 每天凌晨2点备份
-0 2 * * * cd /home/w/Peos && docker-compose exec postgres pg_dump -U postgres ecommerce_ops > /backup/db_$(date +\%Y\%m\%d).sql
-```
-
----
-
-## 七、故障排查
-
-### 1. 无法连接数据库
-
-**症状**: 后端启动失败，日志显示数据库连接错误
-
-**解决**:
-```bash
-# 检查PostgreSQL容器状态
-docker-compose ps postgres
-
-# 查看PostgreSQL日志
-docker-compose logs postgres
-
-# 重启PostgreSQL
-docker-compose restart postgres
-
-# 检查数据库配置
-docker-compose exec postgres psql -U postgres -l
-```
-
-### 2. 前端页面空白
-
-**症状**: 访问前端显示空白页面
-
-**解决**:
-```bash
-# 检查前端容器状态
-docker-compose ps frontend
-
-# 查看前端日志
-docker-compose logs frontend
-
-# 检查后端API是否正常
-curl http://localhost:8000/health
-
-# 清除浏览器缓存，强制刷新（Ctrl+Shift+R）
-
-# 重启前端服务
-docker-compose restart frontend
-```
-
-### 3. 导入数据失败
-
-**症状**: Excel文件上传后导入失败
-
-**解决**:
-- 检查Excel文件格式（必填列是否存在）
-- 查看导入历史中的错误信息
-- 查看后端日志: `docker-compose logs backend`
-- 确保数据格式正确（如日期格式、数字格式）
-
-### 4. 内存不足
-
-**症状**: 容器频繁重启，系统响应缓慢
-
-**解决**:
-```bash
-# 查看系统资源
-free -h
-df -h
-
-# 查看Docker资源使用
-docker stats
-
-# 限制容器内存（修改docker-compose.yml）
-services:
-  backend:
-    deploy:
-      resources:
-        limits:
-          memory: 2G
-
-# 清理无用数据
-docker system prune -a
-```
-
-### 5. 端口被占用
-
-**症状**: docker-compose启动失败，提示端口已被占用
-
-**解决**:
-```bash
-# 查看端口占用
-sudo lsof -i :80
-sudo lsof -i :8000
-
-# 停止占用端口的进程
-sudo kill -9 PID
-
-# 或修改docker-compose.yml中的端口映射
-```
-
----
-
-## 八、更新升级
+## 更新升级
 
 ### 代码更新
 
@@ -526,64 +301,6 @@ npm update
 
 # 重新构建
 docker-compose build
-```
-
----
-
-## 九、监控维护
-
-### 日志管理
-
-```bash
-# 查看实时日志
-docker-compose logs -f --tail=100
-
-# 导出日志
-docker-compose logs > logs_$(date +%Y%m%d).txt
-
-# 清理旧日志
-docker-compose logs --tail=0
-```
-
-### 定期维护
-
-```bash
-# 每周执行一次
-# 1. 备份数据库
-# 2. 清理旧日志
-# 3. 检查磁盘空间
-# 4. 更新系统补丁
-```
-
----
-
-## 十、技术支持
-
-### 查看系统信息
-
-```bash
-# Docker版本
-docker --version
-docker-compose --version
-
-# 系统信息
-uname -a
-free -h
-df -h
-```
-
-### 常用检查命令
-
-```bash
-# 检查所有服务状态
-docker-compose ps
-
-# 检查网络连接
-docker network ls
-docker network inspect peos_app-network
-
-# 检查数据卷
-docker volume ls
 ```
 
 ---
