@@ -1,4 +1,4 @@
-# 项目开发文档
+# 项目文档
 
 ## 技术架构
 
@@ -38,7 +38,70 @@ Docker 20.10+
 
 ### API设计
 
-### 数据库设计
+**RESTful架构**，遵循标准HTTP方法和状态码。
+
+**核心接口分组**：
+
+1. **认证模块** (`/api/auth`)
+   - `POST /login` - 用户登录
+   - `GET /me` - 获取当前用户信息
+
+2. **用户管理** (`/api/users`)
+   - `GET /users` - 用户列表（登录用户可访问）
+   - `GET /users/{id}` - 用户详情
+   - `POST /users` - 创建用户（仅管理员）
+   - `PUT /users/{id}` - 更新用户
+   - `DELETE /users/{id}` - 删除用户
+   - `PUT /users/{id}/password` - 修改密码
+   - `PUT /users/{id}/avatar` - 上传头像
+
+3. **系统配置** (`/api/settings`, `/api/menus`, `/api/platforms`)
+   - `GET/PUT /api/settings` - 系统设置
+   - `GET /api/menus` - 菜单列表
+   - `PUT /api/menus/{id}` - 编辑菜单
+   - `GET/POST/PUT/DELETE /api/platforms` - 平台管理
+
+4. **店铺管理** (`/api/shops`)
+   - `GET /shops` - 店铺列表（支持平台、状态筛选）
+   - `GET /shops/{id}` - 店铺详情
+   - `POST /shops` - 创建店铺
+   - `PUT /shops/{id}` - 更新店铺
+   - `DELETE /shops/{id}` - 删除店铺
+   - `GET /shops/count/total` - 店铺统计
+
+5. **数据导入** (`/api/import`)
+   - `POST /import/upload` - 上传并导入数据
+   - `GET /import/history` - 导入历史
+   - `GET /import-templates/{type}` - 导入模板配置
+
+6. **工作表** (`/api/worksheets`)
+   - `GET/POST/PUT/DELETE /worksheets` - 工作表CRUD
+   - `POST /worksheets/data/query` - 查询工作表数据
+
+7. **操作日志** (`/api/logs`)
+   - `GET /logs` - 日志列表（多维度筛选）
+   - `GET /logs/{id}` - 日志详情
+   - `GET /logs/count` - 日志统计
+   - `GET /logs/stats/summary` - 统计概览
+
+8. **数据看板** (`/api/dashboard-data`)
+   - `GET /dashboard-data/summary` - 数据汇总
+   - `GET /dashboard-data/sales/trend` - 销售趋势
+   - `GET /dashboard-data/sales/ranking` - 销售排行
+   - `GET /dashboard-data/products/analysis` - 商品分析
+   - `GET /dashboard-data/shops/comparison` - 店铺对比
+
+**技术特性**：
+- JWT Token认证（所有接口需登录）
+- 权限分级（普通用户/管理员）
+- 统一错误处理（HTTP标准状态码）
+- 分页支持（skip/limit）
+- 多维度筛选（查询参数）
+- Pydantic数据验证
+
+---
+
+## 数据库设计
 
 **核心表结构**:
 
@@ -256,335 +319,151 @@ Docker 20.10+
 
 ## 功能模块
 
-### 0. 系统灵活配置功能 ✅ 
+### 系统配置 ✅ 
 
 **功能描述**:
 - 系统基本设置（系统名称、Logo、版权信息）
 - 菜单管理（固定菜单，支持编辑名称和排序）
-- 电商平台管理（新增、编辑、删除平台）
 - 用户管理（完整的用户CRUD功能）
 - 个人信息管理（头像上传、密码修改）
 
 **实现方式**:
-- **后端**: 
-  - `SystemSetting`模型：存储系统配置（JSONB灵活配置）
-  - `MenuItem`模型：动态菜单配置（支持多级菜单）
-  - `Platform`模型：电商平台配置
-  - `User`模型：用户管理（支持头像、邮箱、手机号）
-- **前端**: 
-  - 动态菜单加载（从API获取、权限过滤、图标动态渲染）
-  - 系统设置页面（Tabs多标签：系统设置、菜单管理、平台管理、用户管理）
-  - 完整的个人信息页面（编辑资料、修改密码、上传头像）
-  - Logo上传功能
+- **后端**: `SystemSetting`、`MenuItem`、`User`模型
+- **前端**: 系统设置页面（多标签：系统设置、菜单管理、用户管理）
+- **API**: `/api/settings`、`/api/menus`、`/api/users`
 
-**API接口**:
-- `GET/PUT /api/settings` - 系统设置管理
-- `GET/PUT /api/menus/{id}` - 菜单编辑（名称、排序）
-- `GET/POST/PUT/DELETE /api/platforms` - 平台管理
-- `GET/POST/PUT/DELETE /api/users` - 用户管理
-- `PUT /api/users/{id}/password` - 修改密码
-- `PUT /api/users/{id}/avatar` - 上传头像
-
-**数据库表**: 
-- `system_settings` - 系统配置表
-- `menu_items` - 菜单配置表（支持父子关系）
-- `platforms` - 平台配置表
-- `users` - 用户表（扩展字段：avatar, email, phone）
-
-**优化点**:
-- 菜单固定，仅支持编辑名称和排序（避免误操作）
-- 支持动态添加和管理电商平台
-- 完整的用户管理功能
-- 管理员可通过个人信息页面管理自己的资料
+**数据库表**: `system_settings`、`menu_items`、`users`
 
 ---
 
-### 1. 用户认证与权限系统 ✅
+### 用户认证 ✅
 
 **功能描述**:
 - JWT Token认证
 - 用户登录/登出
 - 前端路由守卫
-- 完整的用户管理（CRUD操作）
 - 个人信息管理（编辑资料、修改密码、上传头像）
-- 头像上传
-- 密码修改
 
 **实现方式**:
-- **后端**: FastAPI + python-jose (JWT) + passlib (BCrypt密码加密)
-- **前端**: Zustand状态管理 + localStorage持久化
-- **路由守卫**: PrivateRoute组件包裹需要认证的路由
-- **个人中心**: 完整的个人信息页面（/profile）
-- **API**: 
-  - `POST /api/auth/login` - 用户登录
-  - `GET /api/auth/me` - 获取当前用户信息
-  - `GET /api/users` - 用户列表（支持搜索筛选）
-  - `POST /api/users` - 创建用户
-  - `GET /api/users/{id}` - 用户详情
-  - `PUT /api/users/{id}` - 更新用户信息
-  - `DELETE /api/users/{id}` - 删除用户
-  - `PUT /api/users/{id}/password` - 修改密码
-  - `PUT /api/users/{id}/avatar` - 上传头像
+- **后端**: FastAPI + JWT (python-jose) + BCrypt密码加密
+- **前端**: Zustand状态管理 + localStorage持久化 + 路由守卫
+- **API**: `/api/auth/login`、`/api/auth/me`
 
-**数据库表**: `users` (扩展字段: avatar, email, phone)
+**数据库表**: `users`
 
 ---
 
-### 2. 完整的布局系统与动态菜单 ✅
+### 系统布局 ✅
 
 **功能描述**:
-- 响应式主布局
-- 动态加载侧边栏菜单（从API获取）
-- 基于角色的权限控制
-- 图标动态渲染
+- 响应式主布局（Header + Sider + Content）
+- 动态侧边栏菜单（从API获取，基于角色权限）
 - 顶部导航栏（用户信息、设置、退出）
 - 面包屑导航
-- 统一的SCSS样式系统
 
 **实现方式**:
-- **组件**: Layout/Header/Sider/Breadcrumb
-- **样式**: SCSS模块化（variables.scss + mixins.scss + global.scss）
-- **UI库**: Ant Design Layout
-- **路由**: React Router 6 嵌套路由
-- **动态菜单**: 从 `/api/menus` 获取，支持多级菜单和权限控制
+- **前端**: Ant Design Layout + React Router 6
+- **样式**: SCSS模块化（全局变量、混入）
+- **API**: `/api/menus`
 
-**关键文件**:
-- `frontend/src/components/Layout/`
-- `frontend/src/styles/`
-- `frontend/src/services/menus.ts`
+**关键组件**: `Layout/`、`Header/`、`Sider/`、`Breadcrumb/`
 
 ---
 
-### 3. 店铺管理 ✅
+### 平台数据 ✅
 
 **功能描述**:
-- 店铺列表展示
-- 创建/编辑/删除店铺
-- 店铺筛选（按平台、状态）
-- 分配管理员
+- **平台管理**: 电商平台配置（新增、编辑、删除平台）
+- **店铺管理**: 店铺列表展示、创建/编辑/删除店铺、按平台和状态筛选、分配管理员
+- **数据导入**: Excel/CSV文件导入（仓库商品、店铺商品、库存数据、销售数据）
+- 按平台维度组织数据（左侧平台列表 + 右侧标签页切换）
 - 支持多平台（淘宝、京东、拼多多、天猫、抖音、快手）
-- **入口位置**：系统设置 → 店铺管理（标签页）
 
 **实现方式**:
-- **后端**: FastAPI + SQLAlchemy ORM + 操作日志记录
-- **前端**: Ant Design Table + Modal表单（集成在系统设置页面）
-- **API**:
-  - `GET /api/shops` - 获取店铺列表（支持分页、筛选）
-  - `POST /api/shops` - 创建店铺
-  - `PUT /api/shops/{id}` - 更新店铺
-  - `DELETE /api/shops/{id}` - 删除店铺
+- **后端**: FastAPI + SQLAlchemy + pandas数据处理 + 操作日志记录
+- **前端**: 左右分栏布局（平台侧边栏 + 内容区标签页）
+- **API**: `/api/platforms`、`/api/shops`、`/api/import`
 
-**数据库表**: `shops`
+**数据库表**: `platforms`、`shops`、`import_history`、`warehouse_products`、`shop_products`、`inventory`、`sales`
 
-**数据模型**:
-```python
-- id: 主键
-- name: 店铺名称
-- platform: 平台
-- account: 店铺账号
-- manager_id: 管理员ID（外键关联users）
-- status: 状态（active/inactive）
-- created_at, updated_at
-```
-
----
-
-### 4. 数据导入系统 ✅
-
-**功能描述**:
-- 支持Excel (.xlsx, .xls) 和CSV文件
-- 4种数据类型导入：
-  1. 仓库商品
-  2. 店铺商品
-  3. 库存数据
-  4. 销售数据
+**核心特性**:
+- 平台级数据隔离与展示
+- 实时统计平台店铺数量
 - 数据验证和错误提示
 - 批量导入进度跟踪
-- 导入历史记录
-
-**实现方式**:
-- **文件处理**: pandas + openpyxl
-- **验证**: 逐行验证数据完整性
-- **导入**: 批量插入/更新数据库
-- **错误处理**: 记录每行错误信息
-- **API**:
-  - `POST /api/import/upload` - 上传并导入数据
-  - `GET /api/import/history` - 获取导入历史
-  - `GET /api/import/templates/{type}` - 查看导入模板
-
-**数据库表**: `import_history`
-
-**核心服务**: `ImportService` (backend/app/services/import_service.py)
-
-**支持的数据格式**:
-
-1. **仓库商品**:
-   - 必填: sku, name
-   - 可选: category, cost_price, spec
-
-2. **店铺商品**:
-   - 必填: shop_id, sku, title, price
-   - 可选: product_url, status, stock
-
-3. **库存数据**:
-   - 必填: sku, quantity
-   - 可选: warehouse_location
-
-4. **销售数据**:
-   - 必填: shop_id, shop_product_id, quantity, amount, sale_date
-   - 可选: order_id, profit
+- 支持4种数据类型导入（仓库商品、店铺商品、库存、销售）
 
 ---
 
-### 5. 工作表系统 ✅
+### 工作表格 ✅
 
 **功能描述**:
 - 自定义工作表视图（基于店铺商品数据）
 - 工作表管理（创建、编辑、删除、切换）
 - 数据筛选（店铺、状态、关键词搜索）
-- 批量操作：
-  - 批量上架/下架
-  - 批量改价
+- 批量操作（批量上架/下架、批量改价）
 - 操作自动记录到操作日志
-- 支持分页和大数据量展示
 
 **实现方式**:
 - **后端**: FastAPI + SQLAlchemy
 - **前端**: Ant Design Table + 行选择 + 批量操作
-- **API**:
-  - `GET/POST/PUT/DELETE /api/worksheets` - 工作表CRUD
-  - `POST /api/worksheets/data/query` - 查询工作表数据
-  - `POST /api/products/shop/batch/status` - 批量更新状态
-  - `POST /api/products/shop/batch/price` - 批量改价
+- **API**: `/api/worksheets`
 
-**数据库表**: 
-- `worksheets` - 工作表配置（用户级）
-- `shop_products` - 店铺商品数据源
-- `warehouse_products` - 仓库商品关联
-- `shops` - 店铺信息关联
+**数据库表**: `worksheets`、`shop_products`、`warehouse_products`、`shops`
 
-**核心特性**:
-- 用户级工作表隔离
-- 灵活的配置存储（JSONB）
-- 支持自定义视图和筛选条件
-- 所有操作自动生成日志
+**核心特性**: 用户级工作表隔离、灵活配置（JSONB）、自动生成操作日志
 
 ---
 
-### 6. 操作日志系统 ✅
+### 操作日志 ✅
 
 **功能描述**:
 - 完整的操作记录追溯
 - 多维度筛选（操作人、操作类型、操作表、时间范围）
 - 操作详情查看（变更前后对比）
 - 操作统计分析
-- 支持日志导出
 
 **实现方式**:
-- **后端**: 
-  - 操作日志装饰器（自动记录）
-  - 手动日志记录函数
-  - 多维度查询API
-- **前端**: 
-  - 日志列表（分页、筛选）
-  - 详情弹窗（JSON对比展示）
-- **API**:
-  - `GET /api/logs` - 查询日志列表
-  - `GET /api/logs/{id}` - 日志详情
-  - `GET /api/logs/count` - 日志统计
-  - `GET /api/logs/stats/summary` - 统计概览
+- **后端**: 操作日志装饰器（自动记录）+ 多维度查询API
+- **前端**: 日志列表（分页、筛选）+ 详情弹窗（JSON对比展示）
+- **API**: `/api/logs`
 
 **数据库表**: `operation_logs`
 
-**记录内容**:
-- 操作人、操作时间
-- 操作类型（create/update/delete）
-- 操作表名、记录ID
-- 变更前后的数据（JSON格式）
+**记录内容**: 操作人、操作时间、操作类型、操作表名、变更前后数据（JSON）
 
-**集成点**:
-- 店铺管理（创建、更新、删除）
-- 批量操作（上下架、改价）
-- 其他关键业务操作
+**集成点**: 店铺管理、批量操作、关键业务操作
 
 ---
 
-### 7. 数据看板 ✅ 
+### 数据看板 ✅ 
 
 **功能描述**:
 - 数据汇总展示（销售额、订单数、活跃店铺、客单价）
 - 销售趋势图表（按日期维度）
 - 商品销售排行（TOP 10）
 - 多维度筛选（日期范围、平台、店铺）
-- 数据实时查询与刷新
 
 **实现方式**:
-- **后端**: 
-  - 数据聚合API：支持多维度查询（日期、店铺、平台）
-  - 统计分析：销售趋势、销售排行、商品分析、店铺对比
-- **前端**: 
-  - 统计卡片展示（4个核心指标）
-  - ECharts图表可视化（折线图、柱状图）
-  - 筛选条件组件（日期选择器、下拉选择）
+- **后端**: 数据聚合API（支持多维度查询）
+- **前端**: 统计卡片 + ECharts图表可视化（折线图、柱状图）
+- **API**: `/api/dashboard-data`
 
-**API接口**:
-- `GET /api/dashboard-data/summary` - 数据汇总
-- `GET /api/dashboard-data/sales/trend` - 销售趋势
-- `GET /api/dashboard-data/sales/ranking` - 销售排行
-- `GET /api/dashboard-data/products/analysis` - 商品分析
-- `GET /api/dashboard-data/shops/comparison` - 店铺对比
+**数据源**: `sales`、`shop_products`、`shops`
 
-**数据源**:
-- `sales` - 销售数据
-- `shop_products` - 店铺商品
-- `shops` - 店铺信息
-
-**优化点**:
-- 支持复杂的SQL聚合查询
-- 灵活的时间范围筛选（默认最近7天）
-- 支持多店铺、多平台对比
-- 响应式布局适配
-
----
-
-### 8. 平台数据管理 ✅
-
-**功能描述**:
-- 按平台维度组织数据管理
-- 左侧平台列表（显示各平台店铺数量）
-- 右侧标签页：店铺列表、数据导入
-- 平台筛选与快速切换
-
-**实现方式**:
-- **页面**: `/platform-data`
-- **布局**: 左右分栏（平台侧边栏 + 内容区）
-- **店铺列表**: 展示当前平台下的所有店铺（表格形式）
-- **数据导入**: 集成导入功能组件
-
-**核心特性**:
-- 平台级数据隔离与展示
-- 实时统计平台店铺数量
-- 支持平台间快速切换
-- 复用现有导入功能
+**核心特性**: SQL聚合查询、灵活时间范围筛选、多店铺/平台对比
 
 ---
 
 **项目状态**: ✅ 生产就绪  
 **核心功能**: ✅ 已完成  
-**管理功能**: ✅ 完善  
-**用户体验**: ⭐⭐⭐⭐⭐  
-**可扩展性**: ⭐⭐⭐⭐⭐  
-**最后更新**: 2025-11-06
+**最后更新**: 2025-11-07
 
 **最新更新**:
-- ✅ 工作表系统完整实现（自定义视图、批量操作、数据筛选）
-- ✅ 操作日志系统完整实现（操作追溯、变更对比、统计分析）
-- ✅ 店铺管理整合到系统设置（简化菜单结构）
-- ✅ 移除独立商品管理（功能整合到工作表系统）
-- ✅ 菜单优化（数据看板、平台数据、工作表、操作日志、系统设置）
-- ✅ 操作日志自动记录（店铺管理、批量操作）
-- ✅ 数据看板简化版实现（统计展示、趋势图表、排行榜）
-- ✅ 平台数据简化版实现（平台分组、店铺列表、数据导入）
+- ✅ API设计文档补充完成（8个核心接口分组）
+- ✅ 功能模块重组（系统配置、用户认证、系统布局、平台数据、工作表格、操作日志、数据看板）
+- ✅ 平台数据模块合并（整合平台管理、店铺管理、数据导入功能）
+- ✅ 文档精简优化（保持简洁、突出核心功能）
 
 ---
 
