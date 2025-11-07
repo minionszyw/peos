@@ -15,7 +15,7 @@ import {
 import ReactECharts from 'echarts-for-react'
 import dayjs from 'dayjs'
 import { getDashboardSummary, getSalesTrend, getSalesRanking } from '@/services/dashboard'
-import { getActivePlatforms } from '@/services/platform'
+import { getPlatforms } from '@/services/platforms'
 import { getShopList } from '@/services/shop'
 import styles from './index.module.scss'
 
@@ -48,7 +48,7 @@ const Dashboard = () => {
 
   const loadPlatforms = async () => {
     try {
-      const data = await getActivePlatforms()
+      const data = await getPlatforms({ is_active: 1 })
       setPlatforms(data)
     } catch (error) {
       console.error('加载平台失败:', error)

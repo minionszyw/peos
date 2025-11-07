@@ -86,7 +86,6 @@ Docker 20.10+
    - `GET /api/menus` - 菜单列表
    - `PUT /api/menus/{id}` - 编辑菜单
    - `GET/POST/PUT/DELETE /api/platforms` - 平台管理
-   - `GET/POST/PUT/DELETE /api/import-templates` - 导入模板管理
 
 4. **店铺管理** (`/api/shops`)
    - `GET /shops` - 店铺列表（支持平台、状态筛选）
@@ -169,13 +168,6 @@ Docker 20.10+
    - is_visible, required_role
    - created_at, updated_at
 
-6. **import_templates** - 导入模板配置表（已废弃）
-   - id, table_type, name, description, field_mappings (JSONB)
-   - validation_rules (JSONB), custom_fields (JSONB), example_data (JSONB)
-   - is_active, sort_order
-   - created_at, updated_at
-   - **说明**：已废弃，保留用于历史兼容
-
 7. **data_tables** - 数据表配置表 ✨ 支持自定义字段
    - id, shop_id (外键), name, table_type（分类）
    - description, **fields (JSONB)** - 字段配置列表
@@ -216,9 +208,10 @@ Docker 20.10+
     - id, user_id, name, config_json
     - created_at, updated_at
 
-14. **dashboards** - 看板配置表
+14. **dashboards** - 看板配置表 ⚠️ 保留但未使用
     - id, user_id, name, config_json
     - created_at, updated_at
+    - **说明**：表结构保留，但Dashboard页面直接使用dashboard-data接口，不使用配置管理功能
 
 15. **import_history** - 导入记录表
     - id, user_id, file_name, table_type
@@ -441,7 +434,7 @@ Docker 20.10+
 - **前端**: 左右分栏布局（树形结构 + 数据表格展示）
 - **API**: `/api/platforms`、`/api/shops`、`/api/data-tables`、`/api/data-table-data`、`/api/import`
 
-**数据库表**: `platforms`、`shops`、`data_tables`、`import_templates`、`import_history`、`warehouse_products`、`shop_products`、`inventory`、`sales`
+**数据库表**: `platforms`、`shops`、`data_tables`、`table_data`、`import_history`、`warehouse_products`、`shop_products`、`inventory`、`sales`
 
 **核心特性**:
 - 三层树形结构（平台-店铺-数据表）

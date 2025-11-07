@@ -9,7 +9,7 @@ from app.models.sales import Sale
 from app.models.shops import Shop
 from app.models.products import ShopProduct
 from app.models.users import User
-from app.schemas.dashboards import DashboardDataQuery
+from app.schemas.dashboard import DashboardDataQuery
 from app.api.deps import get_current_user
 
 router = APIRouter()

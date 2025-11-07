@@ -9,7 +9,7 @@ import { Shop, ShopCreate, ShopUpdate } from '@/types/shop'
 import { getShopList, createShop, updateShop, deleteShop } from '@/services/shop'
 import { getUserList } from '@/services/auth'
 import { User } from '@/types/user'
-import { getActivePlatforms, Platform } from '@/services/platform'
+import { getPlatforms, Platform } from '@/services/platforms'
 
 const ShopManagement = () => {
   const [shops, setShops] = useState<Shop[]>([])
@@ -46,7 +46,7 @@ const ShopManagement = () => {
   // 加载平台列表
   const loadPlatforms = async () => {
     try {
-      const data = await getActivePlatforms()
+      const data = await getPlatforms({ is_active: 1 })
       setPlatforms(data)
     } catch (error) {
       console.error('加载平台列表失败:', error)
