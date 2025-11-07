@@ -73,6 +73,12 @@ const PlatformData = () => {
 
   // 导入数据上传状态
   const [importLoading, setImportLoading] = useState(false)
+  
+  // 导入配置弹窗
+  const [importConfigVisible, setImportConfigVisible] = useState(false)
+  const [importFile, setImportFile] = useState<File | null>(null)
+  const [importMode, setImportMode] = useState<'append' | 'overwrite'>('append')
+  const [errorStrategy, setErrorStrategy] = useState<'skip' | 'abort'>('skip')
 
   // 表格导入相关状态
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
@@ -509,42 +515,77 @@ const PlatformData = () => {
     setDataTableRefreshKey(prev => prev + 1)
   }
 
-  // 导入数据处理
+  // 打开导入配置弹窗
   const handleImportData = () => {
-    // 触发 DataTable 组件中的导入操作
+    if (!selectedNode || selectedNode.type !== 'data_table') {
+      message.error('请选择数据表')
+      return
+    }
+
     const fileInput = document.createElement('input')
     fileInput.type = 'file'
     fileInput.accept = '.xlsx,.xls,.csv'
-    fileInput.onchange = async (e: any) => {
+    fileInput.onchange = (e: any) => {
       const file = e.target.files?.[0]
-      if (!file) return
-      
-      try {
-        setImportLoading(true)
-        const { uploadAndImport } = await import('@/services/import')
-        const result = await uploadAndImport(
-          file,
-          selectedNode.nodeData.table_type,
-          selectedNode.nodeData.id,
-          selectedNode.nodeData.shop_id
-        )
+      if (file) {
+        setImportFile(file)
+        setImportMode('append')
+        setErrorStrategy('skip')
+        setImportConfigVisible(true)
+      }
+    }
+    fileInput.click()
+  }
 
-        if (result.status === 'success') {
-          message.success(`导入成功！共${result.total_rows}条，成功${result.success_rows}条`)
-          handleRefreshTableData()
-          loadTreeData()
-        } else if (result.status === 'partial_success') {
+  // 执行导入
+  const executeImport = async () => {
+    if (!importFile || !selectedNode) return
+    
+    try {
+      setImportLoading(true)
+      setImportConfigVisible(false) // 关闭配置弹窗
+      message.loading({ content: '正在导入数据...', key: 'import', duration: 0 })
+      
+      // 调用新的数据表导入接口
+      const formData = new FormData()
+      formData.append('file', importFile)
+      formData.append('data_table_id', selectedNode.nodeData.id.toString())
+      formData.append('import_mode', importMode)
+      formData.append('error_strategy', errorStrategy)
+      
+      const response = await fetch('/api/data-tables/import-data', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        },
+        body: formData,
+      })
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ detail: '导入失败' }))
+        throw new Error(errorData.detail || '导入失败')
+      }
+      
+      const result = await response.json()
+      
+      // 关闭 loading message
+      message.destroy('import')
+      
+      if (result.success) {
+        if (result.error_count > 0) {
+          // 有部分错误
           Modal.warning({
-            title: '部分导入成功',
+            title: '部分数据导入成功',
+            width: 600,
             content: (
               <div>
-                <p>共{result.total_rows}条，成功{result.success_rows}条，失败{result.error_count}条</p>
+                <p>共 {result.total_rows} 条数据，成功导入 {result.imported_rows} 条，失败 {result.error_count} 条</p>
                 {result.errors && result.errors.length > 0 && (
-                  <div style={{ maxHeight: 200, overflow: 'auto' }}>
-                    <p>错误信息：</p>
-                    <ul>
-                      {result.errors.map((error, index) => (
-                        <li key={index}>{error}</li>
+                  <div style={{ maxHeight: 300, overflow: 'auto', marginTop: 16, background: '#f5f5f5', padding: 12, borderRadius: 4 }}>
+                    <p style={{ fontWeight: 'bold', marginBottom: 8 }}>错误信息：</p>
+                    <ul style={{ margin: 0, paddingLeft: 20 }}>
+                      {result.errors.map((error: string, index: number) => (
+                        <li key={index} style={{ marginBottom: 4 }}>{error}</li>
                       ))}
                     </ul>
                   </div>
@@ -552,18 +593,23 @@ const PlatformData = () => {
               </div>
             ),
           })
-          handleRefreshTableData()
-          loadTreeData()
         } else {
-          message.error('导入失败')
+          // 全部成功
+          message.success(`导入成功！共 ${result.total_rows} 条数据全部导入`)
         }
-      } catch (error: any) {
-        message.error(error.message || '导入失败')
-      } finally {
-        setImportLoading(false)
+        handleRefreshTableData()
+        loadTreeData(true)
+      } else {
+        message.error('导入失败')
       }
+    } catch (error: any) {
+      console.error('导入失败:', error)
+      message.destroy('import')
+      message.error(error.message || '导入失败')
+    } finally {
+      setImportLoading(false)
+      setImportFile(null)
     }
-    fileInput.click()
   }
 
   // 渲染右侧操作栏
@@ -887,6 +933,86 @@ const PlatformData = () => {
             <Input />
           </Form.Item>
         </Form>
+      </Modal>
+
+      {/* 导入配置弹窗 */}
+      <Modal
+        title="导入数据配置"
+        open={importConfigVisible}
+        onOk={executeImport}
+        onCancel={() => {
+          setImportConfigVisible(false)
+          setImportFile(null)
+        }}
+        okText="开始导入"
+        cancelText="取消"
+        confirmLoading={importLoading}
+        width={500}
+      >
+        <Space direction="vertical" style={{ width: '100%' }} size="large">
+          <Alert
+            message="文件信息"
+            description={importFile ? `文件名：${importFile.name}` : '未选择文件'}
+            type="info"
+            showIcon
+          />
+          
+          <div>
+            <div style={{ marginBottom: 8, fontWeight: 500 }}>导入模式</div>
+            <Select
+              value={importMode}
+              onChange={setImportMode}
+              style={{ width: '100%' }}
+              options={[
+                {
+                  value: 'append',
+                  label: '追加模式',
+                  description: '在现有数据后追加新数据'
+                },
+                {
+                  value: 'overwrite',
+                  label: '覆盖模式',
+                  description: '清空数据表后再导入（谨慎使用）'
+                }
+              ]}
+            />
+            <div style={{ marginTop: 8, fontSize: 12, color: '#666' }}>
+              {importMode === 'append' ? (
+                <span>📌 追加模式：新数据将添加到现有数据之后，不会影响现有数据</span>
+              ) : (
+                <span style={{ color: '#ff4d4f' }}>⚠️ 覆盖模式：将删除所有现有数据后再导入，此操作不可恢复！</span>
+              )}
+            </div>
+          </div>
+          
+          <div>
+            <div style={{ marginBottom: 8, fontWeight: 500 }}>错误处理策略</div>
+            <Select
+              value={errorStrategy}
+              onChange={setErrorStrategy}
+              style={{ width: '100%' }}
+              options={[
+                {
+                  value: 'skip',
+                  label: '跳过错误',
+                  description: '遇到错误行跳过，继续导入'
+                },
+                {
+                  value: 'abort',
+                  label: '遇错中止',
+                  description: '遇到第一个错误立即停止'
+                }
+              ]}
+            />
+            <div style={{ marginTop: 8, fontSize: 12, color: '#666' }}>
+              {errorStrategy === 'skip' ? (
+                <span>📌 跳过错误：错误行将被跳过，成功的行会正常导入</span>
+              ) : (
+                <span>⚠️ 遇错中止：遇到第一个错误立即停止导入，已导入数据会保留</span>
+              )}
+            </div>
+          </div>
+        </Space>
       </Modal>
     </div>
   )

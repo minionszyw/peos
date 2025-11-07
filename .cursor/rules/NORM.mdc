@@ -17,9 +17,10 @@ alwaysApply: true
 - **依赖倒置原则（Dependency Inversion Principle, DIP）** ：高层模块不应依赖低层模块，二者都应依赖抽象。
 - **组合优于继承原则（Composition Over Inheritance）** ：尽量使用组合而非继承来实现代码复用和扩展。
 
+---
+
 ### 项目规范
-- 使用中文回复
-- 文档职责
+- 文档导航/职责
   - DEPLOY.md 开发环境配置、生产环境部署、常用命令、更新升级
   - NORM.mdc 通用原则、开发规范（命名、目录、Git、API、数据库、代码、安全、性能）
   - PROJECT.md 技术架构、API设计、数据库设计、项目需求、功能模块
@@ -361,3 +362,4 @@ const value = useMemo(() => calculate(data), [data])
 const handleClick = useCallback(() => {}, [dependency])
 ```
 
+---

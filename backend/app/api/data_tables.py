@@ -341,11 +341,19 @@ async def parse_excel_file(
 async def import_table_data(
     data_table_id: int = Form(...),
     file: UploadFile = File(...),
+    import_mode: str = Form("append"),  # append: 追加, overwrite: 覆盖
+    error_strategy: str = Form("skip"),  # skip: 跳过错误, abort: 遇错中止
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     """
     将Excel/CSV文件数据导入到指定数据表
+    
+    参数:
+    - data_table_id: 数据表ID
+    - file: Excel/CSV文件
+    - import_mode: 导入模式 (append=追加, overwrite=覆盖)
+    - error_strategy: 错误处理策略 (skip=跳过错误继续, abort=遇错中止)
     """
     try:
         # 查询数据表
@@ -387,43 +395,115 @@ async def import_table_data(
                 detail="数据表未配置字段"
             )
         
-        # 验证文件列是否与字段配置匹配
-        field_names = [f['name'] for f in fields]
-        missing_fields = set(field_names) - set(df.columns)
-        if missing_fields:
+        # 验证参数
+        if import_mode not in ['append', 'overwrite']:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"文件缺少必要的列: {', '.join(missing_fields)}"
+                detail="导入模式必须是 'append' 或 'overwrite'"
             )
+        
+        if error_strategy not in ['skip', 'abort']:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="错误策略必须是 'skip' 或 'abort'"
+            )
+        
+        # 验证文件列是否与字段配置匹配（只验证必填字段）
+        required_fields = [f['name'] for f in fields if f.get('required', False)]
+        missing_required_fields = set(required_fields) - set(df.columns)
+        if missing_required_fields:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"文件缺少必填列: {', '.join(missing_required_fields)}"
+            )
+        
+        # 如果是覆盖模式，先删除所有数据
+        if import_mode == 'overwrite':
+            deleted_count = db.query(TableData).filter(
+                TableData.data_table_id == data_table_id
+            ).delete()
+            db.commit()
+            print(f"覆盖模式：已删除 {deleted_count} 条旧数据")
         
         # 导入数据
         imported_count = 0
-        for _, row in df.iterrows():
-            # 构建数据记录
-            data_record = {}
-            for field in fields:
-                field_name = field['name']
-                if field_name in df.columns:
-                    value = row[field_name]
-                    # 处理NaN值
-                    if pd.isna(value):
-                        value = None
-                    data_record[field_name] = value
-            
-            # 创建数据记录
-            table_data = TableData(
-                data_table_id=data_table_id,
-                data=data_record
-            )
-            db.add(table_data)
-            imported_count += 1
+        errors = []
+        
+        for index, row in df.iterrows():
+            try:
+                # 构建数据记录
+                data_record = {}
+                for field in fields:
+                    field_name = field['name']
+                    field_type = field.get('type', 'text')
+                    is_required = field.get('required', False)
+                    
+                    if field_name in df.columns:
+                        value = row[field_name]
+                        
+                        # 处理NaN值
+                        if pd.isna(value):
+                            if is_required:
+                                raise ValueError(f"必填字段 '{field_name}' 不能为空")
+                            value = None
+                        else:
+                            # 根据字段类型转换值
+                            if field_type == 'number':
+                                try:
+                                    value = float(value) if value is not None else None
+                                except (ValueError, TypeError):
+                                    raise ValueError(f"字段 '{field_name}' 应为数字类型")
+                            elif field_type == 'boolean':
+                                if isinstance(value, (bool, int)):
+                                    value = bool(value)
+                                elif isinstance(value, str):
+                                    value = value.lower() in ['true', '1', 'yes', '是']
+                            elif field_type == 'date':
+                                try:
+                                    if value is not None:
+                                        value = pd.to_datetime(value).isoformat()
+                                except:
+                                    raise ValueError(f"字段 '{field_name}' 日期格式错误")
+                            else:  # text
+                                value = str(value) if value is not None else None
+                        
+                        data_record[field_name] = value
+                    elif is_required:
+                        raise ValueError(f"文件中缺少必填字段: {field_name}")
+                
+                # 创建数据记录
+                table_data = TableData(
+                    data_table_id=data_table_id,
+                    data=data_record
+                )
+                db.add(table_data)
+                imported_count += 1
+                
+            except Exception as e:
+                error_msg = f"第 {index + 2} 行: {str(e)}"
+                errors.append(error_msg)
+                
+                # 如果是遇错中止策略，立即停止
+                if error_strategy == 'abort':
+                    print(f"遇错中止：{error_msg}")
+                    break
+                
+                # 如果错误太多，提前终止
+                if len(errors) > 100:
+                    errors.append("错误过多，已停止导入...")
+                    break
         
         db.commit()
         
         return {
             "success": True,
             "imported_rows": imported_count,
-            "total_rows": len(df)
+            "total_rows": len(df),
+            "error_count": len(errors),
+            "errors": errors[:50] if errors else [],  # 最多返回50条错误
+            "import_mode": import_mode,
+            "error_strategy": error_strategy,
+            "message": f"{'覆盖' if import_mode == 'overwrite' else '追加'}模式导入完成"
         }
         
     except HTTPException:
