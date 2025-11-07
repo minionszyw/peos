@@ -1,5 +1,31 @@
 # 项目文档
 
+## 最新更新（2025-11-07）
+
+### 自定义字段功能 ✨
+数据表现已支持完全自定义字段模式，无需预定义模板：
+
+**核心功能**：
+- **字段配置器**：管理员创建数据表时可自定义字段（名称、类型、必填、描述）
+- **字段类型**：支持文本、数字、日期、布尔值四种类型
+- **灵活存储**：使用 JSONB 字段存储数据，支持任意字段组合
+- **动态渲染**：数据表自动根据字段配置生成列和表单
+
+**数据库变更**：
+- 新增 `table_data` 表（通用数据存储，使用 JSONB）
+- 修改 `data_tables` 表（移除 `template_id`，新增 `fields` JSONB 字段）
+- 迁移脚本：`1cb5d6703e9a_refactor_custom_fields.py`
+
+**工作流程**：
+1. 管理员创建数据表 → 配置字段（商品ID、标题、价格等）
+2. 编辑数据表 → 树形结构包含完整字段配置，可直接编辑
+3. 用户导入数据 → 根据字段配置验证和存储（待实现）
+4. 查看数据 → 动态渲染字段列
+
+**重要修复**：
+- 树形结构 API 现已返回完整的 `fields`、`description`、`sort_order` 字段
+- 编辑数据表时能正确显示已配置的自定义字段
+
 ## 技术架构
 
 ### 前端技术栈
@@ -60,6 +86,7 @@ Docker 20.10+
    - `GET /api/menus` - 菜单列表
    - `PUT /api/menus/{id}` - 编辑菜单
    - `GET/POST/PUT/DELETE /api/platforms` - 平台管理
+   - `GET/POST/PUT/DELETE /api/import-templates` - 导入模板管理
 
 4. **店铺管理** (`/api/shops`)
    - `GET /shops` - 店铺列表（支持平台、状态筛选）
@@ -69,27 +96,41 @@ Docker 20.10+
    - `DELETE /shops/{id}` - 删除店铺
    - `GET /shops/count/total` - 店铺统计
 
-5. **数据导入** (`/api/import`)
-   - `POST /import/upload` - 上传并导入数据
+5. **数据表管理** (`/api/data-tables`) ✨ 支持自定义字段
+   - `GET /data-tables/tree` - 获取树形结构（包含完整字段配置）
+   - `GET /data-tables` - 数据表列表
+   - `GET /data-tables/{id}` - 数据表详情（包含 fields）
+   - `POST /data-tables` - 创建数据表（需提供 fields 字段配置，仅管理员）
+   - `PUT /data-tables/{id}` - 更新数据表（可更新字段配置，仅管理员）
+   - `DELETE /data-tables/{id}` - 删除数据表（仅管理员）
+   - **树形结构返回**: 包含 fields、description、sort_order 等完整信息
+
+6. **数据表数据** (`/api/data-table-data`) ✨ 基于 table_data 通用存储
+   - `GET /data-table-data/{id}/data` - 获取数据表数据（返回 fields 和数据）
+   - `POST /data-table-data/{id}/data` - 创建数据（添加记录）
+   - `DELETE /data-table-data/{id}/data/{data_id}` - 删除数据
+
+7. **数据导入** (`/api/import`)
+   - `POST /import/upload` - 上传并导入数据（支持按数据表导入）
    - `GET /import/history` - 导入历史
    - `GET /import-templates/{type}` - 导入模板配置
 
-6. **工作表** (`/api/worksheets`)
+8. **工作表** (`/api/worksheets`)
    - `GET/POST/PUT/DELETE /worksheets` - 工作表CRUD
    - `POST /worksheets/data/query` - 查询工作表数据
 
-7. **操作日志** (`/api/logs`)
+9. **操作日志** (`/api/logs`)
    - `GET /logs` - 日志列表（多维度筛选）
    - `GET /logs/{id}` - 日志详情
    - `GET /logs/count` - 日志统计
    - `GET /logs/stats/summary` - 统计概览
 
-8. **数据看板** (`/api/dashboard-data`)
-   - `GET /dashboard-data/summary` - 数据汇总
-   - `GET /dashboard-data/sales/trend` - 销售趋势
-   - `GET /dashboard-data/sales/ranking` - 销售排行
-   - `GET /dashboard-data/products/analysis` - 商品分析
-   - `GET /dashboard-data/shops/comparison` - 店铺对比
+10. **数据看板** (`/api/dashboard-data`)
+    - `GET /dashboard-data/summary` - 数据汇总
+    - `GET /dashboard-data/sales/trend` - 销售趋势
+    - `GET /dashboard-data/sales/ranking` - 销售排行
+    - `GET /dashboard-data/products/analysis` - 商品分析
+    - `GET /dashboard-data/shops/comparison` - 店铺对比
 
 **技术特性**：
 - JWT Token认证（所有接口需登录）
@@ -128,43 +169,58 @@ Docker 20.10+
    - is_visible, required_role
    - created_at, updated_at
 
-6. **import_templates** - 导入模板配置表 (新增)
-   - id, table_type (唯一), field_mappings (JSONB)
-   - validation_rules (JSONB), custom_fields (JSONB)
+6. **import_templates** - 导入模板配置表（已废弃）
+   - id, table_type, name, description, field_mappings (JSONB)
+   - validation_rules (JSONB), custom_fields (JSONB), example_data (JSONB)
+   - is_active, sort_order
    - created_at, updated_at
+   - **说明**：已废弃，保留用于历史兼容
 
-7. **warehouse_products** - 仓库商品表
+7. **data_tables** - 数据表配置表 ✨ 支持自定义字段
+   - id, shop_id (外键), name, table_type（分类）
+   - description, **fields (JSONB)** - 字段配置列表
+   - sort_order, is_active
+   - created_at, updated_at
+   - **字段配置格式**：`[{name, type, required, description}, ...]`
+
+7.5. **table_data** - 通用数据存储表 ✨ 新增
+   - id, data_table_id (外键)
+   - **data (JSONB)** - 实际数据内容
+   - created_at, updated_at
+   - **说明**：所有数据表的数据统一存储在此表，字段由 data_tables.fields 定义
+
+8. **warehouse_products** - 仓库商品表
    - id, sku (唯一), name, category, cost_price, spec
    - created_at, updated_at
 
-8. **shop_products** - 店铺商品表
+9. **shop_products** - 店铺商品表
    - id, shop_id, warehouse_product_id, product_url
    - title, price, status, stock
    - created_at, updated_at
 
-9. **inventory** - 库存表
+10. **inventory** - 库存表
    - id, warehouse_product_id (唯一), quantity, warehouse_location
    - updated_at
 
-10. **sales** - 销售记录表
+11. **sales** - 销售记录表
     - id, shop_id, shop_product_id, order_id
     - quantity, amount, profit, sale_date
     - created_at
 
-11. **operation_logs** - 操作日志表
+12. **operation_logs** - 操作日志表
     - id, user_id, action_type, table_name, record_id
     - old_value (JSON), new_value (JSON)
     - created_at
 
-12. **worksheets** - 工作表配置表
+13. **worksheets** - 工作表配置表
     - id, user_id, name, config_json
     - created_at, updated_at
 
-13. **dashboards** - 看板配置表
+14. **dashboards** - 看板配置表
     - id, user_id, name, config_json
     - created_at, updated_at
 
-14. **import_history** - 导入记录表
+15. **import_history** - 导入记录表
     - id, user_id, file_name, table_type
     - status, total_rows, success_rows, error_message
     - created_at
@@ -375,23 +431,29 @@ Docker 20.10+
 **功能描述**:
 - **平台管理**: 电商平台配置（新增、编辑、删除平台）
 - **店铺管理**: 店铺列表展示、创建/编辑/删除店铺、按平台和状态筛选、分配管理员
-- **数据导入**: Excel/CSV文件导入（仓库商品、店铺商品、库存数据、销售数据）
-- 按平台维度组织数据（左侧平台列表 + 右侧标签页切换）
+- **数据表管理**: 自定义数据表配置（基于模板创建、管理数据表）
+- **数据导入**: Excel/CSV文件导入到指定数据表
+- 树形结构展示（平台 -> 店铺 -> 数据表）
 - 支持多平台（淘宝、京东、拼多多、天猫、抖音、快手）
 
 **实现方式**:
 - **后端**: FastAPI + SQLAlchemy + pandas数据处理 + 操作日志记录
-- **前端**: 左右分栏布局（平台侧边栏 + 内容区标签页）
-- **API**: `/api/platforms`、`/api/shops`、`/api/import`
+- **前端**: 左右分栏布局（树形结构 + 数据表格展示）
+- **API**: `/api/platforms`、`/api/shops`、`/api/data-tables`、`/api/data-table-data`、`/api/import`
 
-**数据库表**: `platforms`、`shops`、`import_history`、`warehouse_products`、`shop_products`、`inventory`、`sales`
+**数据库表**: `platforms`、`shops`、`data_tables`、`import_templates`、`import_history`、`warehouse_products`、`shop_products`、`inventory`、`sales`
 
 **核心特性**:
-- 平台级数据隔离与展示
-- 实时统计平台店铺数量
+- 三层树形结构（平台-店铺-数据表）
+- 管理员可管理平台、店铺、数据表
+- 用户可导入数据到数据表
+- 基于模板的灵活数据表配置
+- 动态表格展示数据表内容
 - 数据验证和错误提示
-- 批量导入进度跟踪
-- 支持4种数据类型导入（仓库商品、店铺商品、库存、销售）
+
+**权限控制**:
+- **管理员**: 可管理平台、店铺、数据表（增删改）
+- **普通用户**: 可查看和导入数据，不能管理结构
 
 ---
 
@@ -460,10 +522,12 @@ Docker 20.10+
 **最后更新**: 2025-11-07
 
 **最新更新**:
-- ✅ API设计文档补充完成（8个核心接口分组）
-- ✅ 功能模块重组（系统配置、用户认证、系统布局、平台数据、工作表格、操作日志、数据看板）
-- ✅ 平台数据模块合并（整合平台管理、店铺管理、数据导入功能）
-- ✅ 文档精简优化（保持简洁、突出核心功能）
+- ✅ 平台数据模块重构（树形结构：平台-店铺-数据表）
+- ✅ 新增数据表管理（基于模板的灵活配置）
+- ✅ 优化数据导入（支持按数据表导入）
+- ✅ 权限控制（管理员管理结构，用户导入数据）
+- ✅ API接口扩展（新增data_tables、data_table_data接口组）
+- ✅ 数据库设计更新（新增data_tables表）
 
 ---
 

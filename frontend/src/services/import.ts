@@ -7,10 +7,21 @@ import { ImportHistory, ImportResult, TableType } from '@/types/import'
 /**
  * 上传并导入数据
  */
-export const uploadAndImport = (file: File, tableType: TableType) => {
+export const uploadAndImport = (
+  file: File, 
+  tableType: TableType, 
+  dataTableId?: number,
+  shopId?: number
+) => {
   const formData = new FormData()
   formData.append('file', file)
   formData.append('table_type', tableType)
+  if (dataTableId) {
+    formData.append('data_table_id', String(dataTableId))
+  }
+  if (shopId) {
+    formData.append('shop_id', String(shopId))
+  }
   
   return request.post<any, ImportResult>('/import/upload', formData, {
     headers: {

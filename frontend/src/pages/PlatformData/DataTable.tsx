@@ -1,237 +1,197 @@
 /**
- * 数据表组件 - 显示店铺数据并支持导入
+ * 数据表组件 - 显示数据表数据
  */
 import { useState, useEffect } from 'react'
-import { Card, Table, Button, Upload, message, Modal, Select, Tabs, Space } from 'antd'
-import { UploadOutlined, DownloadOutlined, SettingOutlined } from '@ant-design/icons'
+import { Card, Table, Empty, Spin } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
-import type { UploadProps } from 'antd'
-import { Shop } from '@/types/shop'
-import { uploadAndImport, getImportTemplate } from '@/services/import'
-import { useUserStore } from '@/stores/userStore'
-import TemplateEditor from './TemplateEditor'
+import { getDataByTableId } from '@/services/dataTable'
 
 interface DataTableProps {
   selectedNode: any
-  shops: Shop[]
+  shops: any[]
   onRefresh: () => void
+  refreshKey?: number
 }
 
-const DataTable = ({ selectedNode, shops, onRefresh }: DataTableProps) => {
-  const { user } = useUserStore()
-  const [tableType, setTableType] = useState<string>('warehouse_products')
+const DataTable = ({ selectedNode, shops, onRefresh, refreshKey = 0 }: DataTableProps) => {
   const [loading, setLoading] = useState(false)
-  const [templateEditorVisible, setTemplateEditorVisible] = useState(false)
+  const [tableData, setTableData] = useState<any[]>([])
+  const [total, setTotal] = useState(0)
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(20)
 
-  const tableTypeOptions = [
-    { value: 'warehouse_products', label: '仓库商品' },
-    { value: 'shop_products', label: '店铺商品' },
-    { value: 'inventory', label: '库存数据' },
-    { value: 'sales', label: '销售数据' },
-  ]
+  // 加载数据表数据
+  const loadTableData = async () => {
+    if (!selectedNode || selectedNode.type !== 'data_table') {
+      return
+    }
 
-  // 店铺表格列
-  const shopColumns: ColumnsType<Shop> = [
-    {
-      title: 'ID',
-      dataIndex: 'id',
-      key: 'id',
-      width: 80,
-    },
-    {
-      title: '店铺名称',
-      dataIndex: 'name',
-      key: 'name',
-    },
-    {
-      title: '平台',
-      dataIndex: 'platform',
-      key: 'platform',
-    },
-    {
-      title: '店铺账号',
-      dataIndex: 'account',
-      key: 'account',
-    },
-    {
-      title: '管理员',
-      dataIndex: 'manager_name',
-      key: 'manager_name',
-    },
-    {
-      title: '状态',
-      dataIndex: 'status',
-      key: 'status',
-      render: (status: string) => (
-        <span style={{ color: status === 'active' ? '#52c41a' : '#ff4d4f' }}>
-          {status === 'active' ? '启用' : '禁用'}
-        </span>
-      ),
-    },
-    {
-      title: '创建时间',
-      dataIndex: 'created_at',
-      key: 'created_at',
-      render: (text: string) => new Date(text).toLocaleString('zh-CN'),
-    },
-  ]
+    try {
+      setLoading(true)
+      const result = await getDataByTableId(
+        selectedNode.nodeData.id,
+        (page - 1) * pageSize,
+        pageSize
+      )
+      setTableData(result.items)
+      setTotal(result.total)
+    } catch (error) {
+      console.error('加载数据失败:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
 
-  // 获取要显示的店铺数据
-  const getDisplayShops = () => {
-    if (!selectedNode) {
-      return shops
+  useEffect(() => {
+    if (selectedNode?.type === 'data_table') {
+      loadTableData()
     }
-    if (selectedNode.type === 'platform') {
-      const platformName = selectedNode.data.name
-      return shops.filter((shop) => shop.platform === platformName)
+  }, [selectedNode, page, pageSize, refreshKey])
+
+  // 动态生成表格列（基于字段配置）
+  const generateColumns = (): ColumnsType<any> => {
+    // 优先使用数据表定义的字段配置
+    const fields = selectedNode?.nodeData?.fields
+    
+    if (fields && Array.isArray(fields) && fields.length > 0) {
+      return fields.map((field: any) => ({
+        title: field.description || field.name,
+        dataIndex: field.name,
+        key: field.name,
+        ellipsis: true,
+        width: 150,
+        render: (text: any) => {
+          if (text === null || text === undefined) {
+            return '-'
+          }
+          if (typeof text === 'object') {
+            return JSON.stringify(text)
+          }
+          // 根据字段类型格式化显示
+          if (field.type === 'date') {
+            try {
+              return new Date(text).toLocaleDateString('zh-CN')
+            } catch {
+              return text
+            }
+          }
+          if (field.type === 'number') {
+            return typeof text === 'number' ? text.toLocaleString() : text
+          }
+          if (field.type === 'boolean') {
+            return text ? '是' : '否'
+          }
+          return String(text)
+        },
+      }))
     }
-    if (selectedNode.type === 'shop') {
-      return [selectedNode.data as Shop]
+
+    // 如果没有字段配置且有数据，从第一行数据推断列
+    if (tableData.length > 0) {
+      const firstRow = tableData[0]
+      return Object.keys(firstRow).map((key) => ({
+        title: key,
+        dataIndex: key,
+        key: key,
+        ellipsis: true,
+        width: 150,
+        render: (text: any) => {
+          if (text === null || text === undefined) {
+            return '-'
+          }
+          if (typeof text === 'object') {
+            return JSON.stringify(text)
+          }
+          return String(text)
+        },
+      }))
     }
+
     return []
   }
 
-  // 下载模板
-  const handleDownloadTemplate = async () => {
-    try {
-      await getImportTemplate(tableType)
-      message.success('模板下载成功')
-    } catch (error) {
-      message.error('模板下载失败')
+  // 渲染不同类型节点的内容
+  const renderContent = () => {
+    if (!selectedNode) {
+      return (
+        <Empty
+          description="请在左侧选择平台、店铺或数据表"
+          style={{ padding: '60px 0' }}
+        />
+      )
     }
+
+    if (selectedNode.type === 'platform') {
+      const platformShops = shops.filter(
+        (shop) => shop.platform === selectedNode.nodeData.name
+      )
+      return (
+        <div>
+          <Card title="平台信息" size="small" style={{ marginBottom: 16 }}>
+            <p><strong>平台名称：</strong>{selectedNode.nodeData.name}</p>
+            <p><strong>平台代码：</strong>{selectedNode.nodeData.code || '-'}</p>
+            <p><strong>店铺数量：</strong>{platformShops.length}</p>
+          </Card>
+          <Empty description="请选择店铺或数据表查看数据" />
+        </div>
+      )
+    }
+
+    if (selectedNode.type === 'shop') {
+      return (
+        <div>
+          <Card title="店铺信息" size="small" style={{ marginBottom: 16 }}>
+            <p><strong>店铺名称：</strong>{selectedNode.nodeData.name}</p>
+            <p><strong>平台：</strong>{selectedNode.nodeData.platform || '-'}</p>
+            <p><strong>店铺账号：</strong>{selectedNode.nodeData.account || '-'}</p>
+          </Card>
+          <Empty description="请选择数据表查看数据" />
+        </div>
+      )
+    }
+
+    if (selectedNode.type === 'data_table') {
+      return (
+        <Spin spinning={loading}>
+          <Table
+            columns={generateColumns()}
+            dataSource={tableData}
+            rowKey={(record) => record.id || Math.random()}
+            pagination={{
+              current: page,
+              pageSize: pageSize,
+              total: total,
+              showSizeChanger: true,
+              showTotal: (total) => `共 ${total} 条`,
+              onChange: (page, pageSize) => {
+                setPage(page)
+                setPageSize(pageSize)
+              },
+            }}
+            scroll={{ x: 'max-content' }}
+          />
+        </Spin>
+      )
+    }
+
+    return null
   }
-
-  // 上传配置
-  const uploadProps: UploadProps = {
-    name: 'file',
-    accept: '.xlsx,.xls,.csv',
-    showUploadList: false,
-    customRequest: async (options) => {
-      const { file } = options
-      try {
-        setLoading(true)
-        const formData = new FormData()
-        formData.append('file', file as File)
-        formData.append('table_type', tableType)
-
-        const result = await uploadAndImport(file as File, tableType)
-        
-        if (result.status === 'success') {
-          message.success(`导入成功！共${result.total_rows}条，成功${result.success_rows}条`)
-        } else if (result.status === 'partial_success') {
-          Modal.warning({
-            title: '部分导入成功',
-            content: (
-              <div>
-                <p>共{result.total_rows}条，成功{result.success_rows}条，失败{result.error_count}条</p>
-                {result.errors && result.errors.length > 0 && (
-                  <div style={{ maxHeight: 200, overflow: 'auto' }}>
-                    <p>错误信息：</p>
-                    <ul>
-                      {result.errors.map((error, index) => (
-                        <li key={index}>{error}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </div>
-            ),
-          })
-        } else {
-          message.error('导入失败')
-        }
-        onRefresh()
-      } catch (error) {
-        message.error('导入失败')
-      } finally {
-        setLoading(false)
-      }
-    },
-  }
-
-  const displayShops = getDisplayShops()
 
   return (
     <Card
       title={
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span>
-            {!selectedNode && '所有店铺'}
-            {selectedNode?.type === 'platform' && `${selectedNode.data.name} - 店铺列表`}
-            {selectedNode?.type === 'shop' && `${selectedNode.data.name} - 店铺数据`}
-          </span>
-          <Space>
-            <Select
-              value={tableType}
-              onChange={setTableType}
-              options={tableTypeOptions}
-              style={{ width: 150 }}
-            />
-            <Button icon={<DownloadOutlined />} onClick={handleDownloadTemplate}>
-              下载模板
-            </Button>
-            <Upload {...uploadProps}>
-              <Button icon={<UploadOutlined />} loading={loading}>
-                导入数据
-              </Button>
-            </Upload>
-            {user?.role === 'admin' && (
-              <Button
-                icon={<SettingOutlined />}
-                onClick={() => setTemplateEditorVisible(true)}
-              >
-                模板设置
-              </Button>
-            )}
-          </Space>
-        </div>
+        <span>
+          {!selectedNode && '数据查看'}
+          {selectedNode?.type === 'platform' && `${selectedNode.nodeData.name} - 平台数据`}
+          {selectedNode?.type === 'shop' && `${selectedNode.nodeData.name} - 店铺数据`}
+          {selectedNode?.type === 'data_table' && `${selectedNode.nodeData.name}`}
+        </span>
       }
       bordered={false}
     >
-      <Tabs
-        defaultActiveKey="shops"
-        items={[
-          {
-            key: 'shops',
-            label: '店铺列表',
-            children: (
-              <Table
-                columns={shopColumns}
-                dataSource={displayShops}
-                rowKey="id"
-                pagination={{
-                  showSizeChanger: true,
-                  showTotal: (total) => `共 ${total} 条`,
-                }}
-              />
-            ),
-          },
-          {
-            key: 'data',
-            label: '数据概览',
-            children: (
-              <div style={{ padding: 20, textAlign: 'center', color: '#999' }}>
-                <p>数据统计功能开发中...</p>
-                <p>将显示：商品数量、库存总量、销售统计等</p>
-              </div>
-            ),
-          },
-        ]}
-      />
-
-      {/* 模板编辑器 */}
-      <TemplateEditor
-        visible={templateEditorVisible}
-        tableType={tableType}
-        onClose={() => setTemplateEditorVisible(false)}
-        onSave={() => {
-          setTemplateEditorVisible(false)
-          message.success('模板保存成功')
-        }}
-      />
+      {renderContent()}
     </Card>
   )
 }
 
 export default DataTable
-

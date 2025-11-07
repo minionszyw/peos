@@ -9,6 +9,7 @@ from app.models.system_settings import SystemSetting
 from app.models.menu_items import MenuItem
 from app.models.platforms import Platform
 from app.models.import_templates import ImportTemplate
+from app.models.data_tables import DataTable, TableData
 
 __all__ = [
     "User",
@@ -25,5 +26,7 @@ __all__ = [
     "MenuItem",
     "Platform",
     "ImportTemplate",
+    "DataTable",
+    "TableData",
 ]
 

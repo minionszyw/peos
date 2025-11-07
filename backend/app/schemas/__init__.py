@@ -9,6 +9,10 @@ from app.schemas.shops import (
 from app.schemas.import_history import (
     ImportHistoryResponse, ImportResult
 )
+from app.schemas.data_tables import (
+    DataTableBase, DataTableCreate, DataTableUpdate, DataTableResponse,
+    DataTableTreeNode, DataTableDataQuery
+)
 
 __all__ = [
     # Users
@@ -20,5 +24,9 @@ __all__ = [
     
     # Import
     "ImportHistoryResponse", "ImportResult",
+    
+    # Data Tables
+    "DataTableBase", "DataTableCreate", "DataTableUpdate", "DataTableResponse",
+    "DataTableTreeNode", "DataTableDataQuery",
 ]
 

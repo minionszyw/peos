@@ -1,6 +1,7 @@
 """数据导入API"""
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form
 from sqlalchemy.orm import Session
+from typing import Optional
 import os
 import shutil
 from datetime import datetime
@@ -8,6 +9,7 @@ from app.core.database import get_db
 from app.core.config import settings
 from app.models.users import User
 from app.models.import_history import ImportHistory
+from app.models.data_tables import DataTable
 from app.schemas.import_history import ImportHistoryResponse, ImportResult
 from app.api.deps import get_current_user
 from app.services.import_service import ImportService
@@ -22,13 +24,30 @@ os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
 async def upload_and_import(
     file: UploadFile = File(...),
     table_type: str = Form(...),
+    data_table_id: Optional[int] = Form(None),
+    shop_id: Optional[int] = Form(None),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     """
     上传并导入数据
     table_type: warehouse_products, shop_products, inventory, sales
+    data_table_id: 数据表ID（可选，如果指定则导入到该数据表）
+    shop_id: 店铺ID（可选，用于导入店铺相关数据）
     """
+    # 如果指定了数据表ID，验证数据表存在
+    data_table = None
+    if data_table_id:
+        data_table = db.query(DataTable).filter(DataTable.id == data_table_id).first()
+        if not data_table:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="数据表不存在"
+            )
+        # 使用数据表的配置
+        table_type = data_table.table_type
+        shop_id = data_table.shop_id
+    
     # 验证文件类型
     if not file.filename.endswith(('.xlsx', '.xls', '.csv')):
         raise HTTPException(
@@ -67,11 +86,19 @@ async def upload_and_import(
         if table_type == "warehouse_products":
             total, success, errors = service.validate_and_import_warehouse_products(file_path, db)
         elif table_type == "shop_products":
-            total, success, errors = service.validate_and_import_shop_products(file_path, db)
+            # 如果指定了shop_id，传递给导入服务
+            if shop_id:
+                total, success, errors = service.validate_and_import_shop_products(file_path, db, shop_id=shop_id)
+            else:
+                total, success, errors = service.validate_and_import_shop_products(file_path, db)
         elif table_type == "inventory":
             total, success, errors = service.validate_and_import_inventory(file_path, db)
         elif table_type == "sales":
-            total, success, errors = service.validate_and_import_sales(file_path, db)
+            # 如果指定了shop_id，传递给导入服务
+            if shop_id:
+                total, success, errors = service.validate_and_import_sales(file_path, db, shop_id=shop_id)
+            else:
+                total, success, errors = service.validate_and_import_sales(file_path, db)
         else:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,

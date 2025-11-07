@@ -32,7 +32,8 @@ async def health_check():
 from app.api import (
     auth, shops, import_data,
     settings, menus, platforms, import_templates,
-    users, dashboards, dashboard_data, worksheets, logs
+    users, dashboards, dashboard_data, worksheets, logs,
+    data_tables, data_table_data
 )
 
 # 认证和用户
@@ -47,6 +48,8 @@ app.include_router(import_templates.router, prefix="/api/import-templates", tags
 
 # 业务功能
 app.include_router(shops.router, prefix="/api/shops", tags=["店铺"])
+app.include_router(data_tables.router, prefix="/api/data-tables", tags=["数据表"])
+app.include_router(data_table_data.router, prefix="/api/data-table-data", tags=["数据表数据"])
 app.include_router(import_data.router, prefix="/api/import", tags=["数据导入"])
 
 # 数据看板
