@@ -13,6 +13,8 @@ class UserBase(BaseModel):
 class UserCreate(UserBase):
     """创建用户"""
     password: str = Field(..., min_length=6, description="密码")
+    email: Optional[str] = Field(None, description="邮箱")
+    phone: Optional[str] = Field(None, description="手机号")
 
 
 class UserUpdate(BaseModel):
@@ -20,11 +22,16 @@ class UserUpdate(BaseModel):
     name: Optional[str] = Field(None, min_length=1, max_length=50)
     password: Optional[str] = Field(None, min_length=6)
     role: Optional[str] = None
+    email: Optional[str] = None
+    phone: Optional[str] = None
 
 
 class UserResponse(UserBase):
     """用户响应"""
     id: int
+    email: Optional[str] = None
+    phone: Optional[str] = None
+    avatar: Optional[str] = None
     created_at: datetime
     
     class Config:

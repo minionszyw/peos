@@ -8,7 +8,6 @@ import {
   MenuUnfoldOutlined,
   UserOutlined,
   LogoutOutlined,
-  SettingOutlined,
 } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
 import { useUserStore } from '@/stores/userStore'
@@ -32,11 +31,6 @@ const Header = ({ collapsed, onToggle }: HeaderProps) => {
       label: '个人信息',
     },
     {
-      key: 'settings',
-      icon: <SettingOutlined />,
-      label: '系统设置',
-    },
-    {
       type: 'divider',
     },
     {
@@ -54,10 +48,7 @@ const Header = ({ collapsed, onToggle }: HeaderProps) => {
         navigate('/login')
         break
       case 'profile':
-        // TODO: 跳转到个人信息页面
-        break
-      case 'settings':
-        // TODO: 跳转到设置页面
+        navigate('/profile')
         break
     }
   }

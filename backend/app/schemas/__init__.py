@@ -6,12 +6,6 @@ from app.schemas.users import (
 from app.schemas.shops import (
     ShopBase, ShopCreate, ShopUpdate, ShopResponse, ShopWithManager
 )
-from app.schemas.products import (
-    WarehouseProductBase, WarehouseProductCreate, WarehouseProductUpdate,
-    WarehouseProductResponse, ShopProductBase, ShopProductCreate,
-    ShopProductUpdate, ShopProductResponse, ShopProductWithDetails,
-    BatchUpdateStatus, BatchUpdatePrice
-)
 from app.schemas.import_history import (
     ImportHistoryResponse, ImportResult
 )
@@ -23,12 +17,6 @@ __all__ = [
     
     # Shops
     "ShopBase", "ShopCreate", "ShopUpdate", "ShopResponse", "ShopWithManager",
-    
-    # Products
-    "WarehouseProductBase", "WarehouseProductCreate", "WarehouseProductUpdate",
-    "WarehouseProductResponse", "ShopProductBase", "ShopProductCreate",
-    "ShopProductUpdate", "ShopProductResponse", "ShopProductWithDetails",
-    "BatchUpdateStatus", "BatchUpdatePrice",
     
     # Import
     "ImportHistoryResponse", "ImportResult",

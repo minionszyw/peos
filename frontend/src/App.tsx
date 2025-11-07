@@ -2,10 +2,14 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { App as AntdApp } from 'antd'
 import Login from '@/pages/Login'
 import Layout from '@/components/Layout'
-import Home from '@/pages/Home'
+import Dashboard from '@/pages/Dashboard'
 import Shops from '@/pages/Shops'
 import Import from '@/pages/Import'
-import ShopProducts from '@/pages/Products/ShopProducts'
+import Settings from '@/pages/Settings'
+import Profile from '@/pages/Profile'
+import PlatformData from '@/pages/PlatformData'
+import Worksheet from '@/pages/Worksheet'
+import Logs from '@/pages/Logs'
 import PrivateRoute from '@/components/PrivateRoute'
 
 function App() {
@@ -22,11 +26,15 @@ function App() {
               </PrivateRoute>
             }
           >
-            <Route index element={<Home />} />
+            <Route index element={<Dashboard />} />
+            <Route path="platform-data" element={<PlatformData />} />
+            <Route path="worksheet" element={<Worksheet />} />
+            <Route path="logs" element={<Logs />} />
             <Route path="shops" element={<Shops />} />
-            <Route path="products/shop" element={<ShopProducts />} />
             <Route path="import" element={<Import />} />
-            {/* 其他路由将在后续添加 */}
+            <Route path="settings" element={<Settings />} />
+            <Route path="profile" element={<Profile />} />
+            {/* 其他路由根据菜单动态配置 */}
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

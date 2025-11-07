@@ -1,19 +1,13 @@
 /**
- * 侧边栏菜单
+ * 侧边栏菜单 - 动态加载
  */
-import { Layout, Menu } from 'antd'
+import { Layout, Menu, Spin } from 'antd'
 import type { MenuProps } from 'antd'
-import {
-  DashboardOutlined,
-  ShopOutlined,
-  ShoppingOutlined,
-  DatabaseOutlined,
-  BarChartOutlined,
-  FileTextOutlined,
-  UploadOutlined,
-  HistoryOutlined,
-} from '@ant-design/icons'
+import * as Icons from '@ant-design/icons'
 import { useNavigate, useLocation } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { getMenuTree, type MenuItem as MenuItemType } from '@/services/menus'
+import { getSettingByKey } from '@/services/settings'
 import styles from './index.module.scss'
 
 const { Sider: AntSider } = Layout
@@ -27,58 +21,59 @@ type MenuItem = Required<MenuProps>['items'][number]
 const Sider = ({ collapsed }: SiderProps) => {
   const navigate = useNavigate()
   const location = useLocation()
+  const [menuItems, setMenuItems] = useState<MenuItem[]>([])
+  const [loading, setLoading] = useState(true)
+  const [systemName, setSystemName] = useState('运营系统')
 
-  const menuItems: MenuItem[] = [
-    {
-      key: '/',
-      icon: <DashboardOutlined />,
-      label: '数据看板',
-    },
-    {
-      key: '/shops',
-      icon: <ShopOutlined />,
-      label: '店铺管理',
-    },
-    {
-      key: '/products',
-      icon: <ShoppingOutlined />,
-      label: '商品管理',
-      children: [
-        {
-          key: '/products/warehouse',
-          label: '仓库商品',
-        },
-        {
-          key: '/products/shop',
-          label: '店铺商品',
-        },
-        {
-          key: '/products/inventory',
-          label: '库存管理',
-        },
-      ],
-    },
-    {
-      key: '/sales',
-      icon: <BarChartOutlined />,
-      label: '销售数据',
-    },
-    {
-      key: '/worksheet',
-      icon: <FileTextOutlined />,
-      label: '工作表',
-    },
-    {
-      key: '/import',
-      icon: <UploadOutlined />,
-      label: '数据导入',
-    },
-    {
-      key: '/logs',
-      icon: <HistoryOutlined />,
-      label: '操作日志',
-    },
-  ]
+  // 动态获取图标组件
+  const getIcon = (iconName?: string) => {
+    if (!iconName) return null
+    const IconComponent = (Icons as any)[iconName]
+    return IconComponent ? <IconComponent /> : null
+  }
+
+  // 递归转换菜单数据
+  const transformMenuData = (menus: MenuItemType[]): MenuItem[] => {
+    return menus.map(menu => ({
+      key: menu.path || menu.id.toString(),
+      icon: getIcon(menu.icon),
+      label: menu.name,
+      children: menu.children && menu.children.length > 0 
+        ? transformMenuData(menu.children) 
+        : undefined
+    }))
+  }
+
+  // 加载菜单数据
+  const loadMenus = async () => {
+    try {
+      setLoading(true)
+      const menus = await getMenuTree()
+      const transformedMenus = transformMenuData(menus)
+      setMenuItems(transformedMenus)
+    } catch (error) {
+      console.error('加载菜单失败:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // 加载系统配置
+  const loadSystemName = async () => {
+    try {
+      const setting = await getSettingByKey('system_name')
+      if (setting && setting.value) {
+        setSystemName(setting.value)
+      }
+    } catch (error) {
+      console.error('加载系统名称失败:', error)
+    }
+  }
+
+  useEffect(() => {
+    loadMenus()
+    loadSystemName()
+  }, [])
 
   const handleMenuClick: MenuProps['onClick'] = ({ key }) => {
     navigate(key)
@@ -93,18 +88,23 @@ const Sider = ({ collapsed }: SiderProps) => {
       width={200}
     >
       <div className={styles.logo}>
-        <DatabaseOutlined className={styles.logoIcon} />
-        {!collapsed && <span className={styles.logoText}>运营系统</span>}
+        <Icons.DatabaseOutlined className={styles.logoIcon} />
+        {!collapsed && <span className={styles.logoText}>{systemName}</span>}
       </div>
 
-      <Menu
-        theme="dark"
-        mode="inline"
-        selectedKeys={[location.pathname]}
-        defaultOpenKeys={['/products']}
-        items={menuItems}
-        onClick={handleMenuClick}
-      />
+      {loading ? (
+        <div style={{ textAlign: 'center', padding: '20px' }}>
+          <Spin />
+        </div>
+      ) : (
+        <Menu
+          theme="dark"
+          mode="inline"
+          selectedKeys={[location.pathname]}
+          items={menuItems}
+          onClick={handleMenuClick}
+        />
+      )}
     </AntSider>
   )
 }

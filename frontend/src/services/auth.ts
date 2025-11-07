@@ -19,16 +19,18 @@ export const getCurrentUser = () => {
 }
 
 /**
- * 创建用户
+ * 创建用户 (已移至 users.ts)
+ * @deprecated 请使用 services/users.ts 中的 createUser
  */
 export const createUser = (data: any) => {
-  return request.post<any, User>('/auth/users', data)
+  return request.post<any, User>('/users', data)
 }
 
 /**
- * 获取用户列表
+ * 获取用户列表 (已移至 users.ts)
+ * @deprecated 请使用 services/users.ts 中的 getUserList
  */
 export const getUserList = (params?: { skip?: number; limit?: number }) => {
-  return request.get<any, User[]>('/auth/users', { params })
+  return request.get<any, User[]>('/users', { params })
 }
 

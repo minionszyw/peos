@@ -10,7 +10,8 @@ class Shop(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(100), nullable=False, index=True, comment="店铺名称")
-    platform = Column(String(50), nullable=False, comment="平台：淘宝/京东/拼多多等")
+    platform = Column(String(50), comment="平台名称（兼容旧数据）")
+    platform_id = Column(Integer, ForeignKey("platforms.id"), nullable=True, comment="平台ID")
     account = Column(String(100), comment="店铺账号")
     manager_id = Column(Integer, ForeignKey("users.id"), comment="管理员ID")
     status = Column(String(20), default="active", comment="状态：active/inactive")
@@ -19,6 +20,7 @@ class Shop(Base):
 
     # 关系
     manager = relationship("User", backref="managed_shops")
+    platform_obj = relationship("Platform", back_populates="shops")
     products = relationship("ShopProduct", back_populates="shop")
     sales = relationship("Sale", back_populates="shop")
 

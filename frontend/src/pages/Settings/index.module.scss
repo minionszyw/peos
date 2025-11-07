@@ -1,0 +1,13 @@
+@import '@/styles/variables.scss';
+
+.settings {
+  padding: $spacing-lg;
+
+  .title {
+    margin-bottom: $spacing-lg;
+    font-size: 24px;
+    font-weight: 600;
+    color: $text-color;
+  }
+}
+

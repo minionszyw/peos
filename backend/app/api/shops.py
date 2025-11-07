@@ -7,6 +7,7 @@ from app.models.shops import Shop
 from app.models.users import User
 from app.schemas.shops import ShopCreate, ShopUpdate, ShopResponse, ShopWithManager
 from app.api.deps import get_current_user
+from app.utils.log_decorator import create_operation_log
 
 router = APIRouter()
 
@@ -31,6 +32,16 @@ def create_shop(
     db.add(new_shop)
     db.commit()
     db.refresh(new_shop)
+    
+    # 记录操作日志
+    create_operation_log(
+        db=db,
+        user_id=current_user.id,
+        action_type="create",
+        table_name="shops",
+        record_id=new_shop.id,
+        new_value={"name": new_shop.name, "platform": new_shop.platform}
+    )
     
     return new_shop
 
@@ -110,6 +121,9 @@ def update_shop(
             detail="店铺不存在",
         )
     
+    # 保存旧值
+    old_value = {"name": shop.name, "platform": shop.platform, "status": shop.status}
+    
     # 更新字段
     update_data = shop_data.model_dump(exclude_unset=True)
     for field, value in update_data.items():
@@ -117,6 +131,17 @@ def update_shop(
     
     db.commit()
     db.refresh(shop)
+    
+    # 记录操作日志
+    create_operation_log(
+        db=db,
+        user_id=current_user.id,
+        action_type="update",
+        table_name="shops",
+        record_id=shop.id,
+        old_value=old_value,
+        new_value={"name": shop.name, "platform": shop.platform, "status": shop.status}
+    )
     
     return shop
 
@@ -135,8 +160,21 @@ def delete_shop(
             detail="店铺不存在",
         )
     
+    # 保存旧值用于日志
+    old_value = {"name": shop.name, "platform": shop.platform}
+    
     db.delete(shop)
     db.commit()
+    
+    # 记录操作日志
+    create_operation_log(
+        db=db,
+        user_id=current_user.id,
+        action_type="delete",
+        table_name="shops",
+        record_id=shop_id,
+        old_value=old_value
+    )
     
     return None
 

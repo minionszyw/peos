@@ -5,6 +5,10 @@ from app.models.sales import Sale
 from app.models.logs import OperationLog
 from app.models.worksheets import Worksheet, Dashboard
 from app.models.import_history import ImportHistory
+from app.models.system_settings import SystemSetting
+from app.models.menu_items import MenuItem
+from app.models.platforms import Platform
+from app.models.import_templates import ImportTemplate
 
 __all__ = [
     "User",
@@ -17,5 +21,9 @@ __all__ = [
     "Worksheet",
     "Dashboard",
     "ImportHistory",
+    "SystemSetting",
+    "MenuItem",
+    "Platform",
+    "ImportTemplate",
 ]
 
