@@ -20,6 +20,7 @@ passlib[bcrypt]==1.7.4
 # Excel/CSV处理
 pandas==2.1.4
 openpyxl==3.1.2
+xlrd==2.0.1
 
 # 异步任务
 celery==5.3.4

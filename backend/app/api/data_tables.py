@@ -263,8 +263,15 @@ async def parse_excel_file(
         filename = file.filename.lower()
         
         if filename.endswith('.csv'):
-            # 解析CSV文件
-            df = pd.read_csv(io.BytesIO(contents), encoding='utf-8', nrows=100)
+            # 解析CSV文件，自动尝试不同编码
+            for encoding in ['utf-8', 'gbk', 'gb2312', 'gb18030']:
+                try:
+                    df = pd.read_csv(io.BytesIO(contents), encoding=encoding, nrows=100)
+                    break
+                except:
+                    continue
+            else:
+                raise ValueError("无法识别CSV文件编码")
         elif filename.endswith(('.xlsx', '.xls')):
             # 解析Excel文件
             df = pd.read_excel(io.BytesIO(contents), nrows=100)
@@ -305,11 +312,14 @@ async def parse_excel_file(
             }
             fields.append(field_config)
         
+        # 将预览数据中的NaN转换为None
+        preview_data = df.head(5).replace({pd.NA: None, float('nan'): None}).to_dict('records')
+        
         return {
             "success": True,
             "fields": fields,
             "total_rows": len(df),
-            "preview_rows": df.head(5).to_dict('records')
+            "preview_rows": preview_data
         }
         
     except pd.errors.EmptyDataError:
@@ -318,6 +328,9 @@ async def parse_excel_file(
             detail="文件为空或格式错误"
         )
     except Exception as e:
+        import traceback
+        error_detail = f"文件解析失败: {str(e)}\n{traceback.format_exc()}"
+        print(error_detail)  # 打印到控制台
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"文件解析失败: {str(e)}"
@@ -349,7 +362,15 @@ async def import_table_data(
         
         # 解析文件
         if filename.endswith('.csv'):
-            df = pd.read_csv(io.BytesIO(contents), encoding='utf-8')
+            # 自动尝试不同编码
+            for encoding in ['utf-8', 'gbk', 'gb2312', 'gb18030']:
+                try:
+                    df = pd.read_csv(io.BytesIO(contents), encoding=encoding)
+                    break
+                except:
+                    continue
+            else:
+                raise ValueError("无法识别CSV文件编码")
         elif filename.endswith(('.xlsx', '.xls')):
             df = pd.read_excel(io.BytesIO(contents))
         else:

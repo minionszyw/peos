@@ -340,8 +340,8 @@ const PlatformData = () => {
     dataTableForm.resetFields()
     dataTableForm.setFieldsValue({ 
       shop_id: shopNode.id,
-      create_method: 'custom',
-      table_type: 'custom',
+      create_method: 'import', // 默认为表格导入
+      table_type: 'custom', // 固定为自定义
       fields: [],
       sort_order: 0,
       is_active: 1
@@ -349,7 +349,7 @@ const PlatformData = () => {
     // 重置表格导入状态
     setUploadedFile(null)
     setParsedFields([])
-    setCreateMethod('custom')
+    setCreateMethod('import') // 默认为表格导入
     setDataTableModalVisible(true)
   }
 
@@ -764,7 +764,8 @@ const PlatformData = () => {
         open={dataTableModalVisible}
         onOk={handleSaveDataTable}
         onCancel={() => setDataTableModalVisible(false)}
-        width={800}
+        width="90%"
+        style={{ maxWidth: 1400 }}
       >
         <Form form={dataTableForm} layout="vertical">
           {currentShopForTable && !editingDataTable && (
@@ -789,7 +790,7 @@ const PlatformData = () => {
             name="create_method" 
             label="创建方式" 
             rules={[{ required: true, message: '请选择创建方式' }]}
-            initialValue="custom"
+            initialValue="import"
           >
             <Select 
               placeholder="选择创建方式" 
@@ -810,18 +811,9 @@ const PlatformData = () => {
             </Select>
           </Form.Item>
 
-          <Form.Item 
-            name="table_type" 
-            label="数据类型" 
-            rules={[{ required: true, message: '请选择数据类型' }]}
-            initialValue="custom"
-          >
-            <Select placeholder="用于数据分类" disabled={!!editingDataTable}>
-              <Select.Option value="product">商品</Select.Option>
-              <Select.Option value="sales">销售</Select.Option>
-              <Select.Option value="inventory">库存</Select.Option>
-              <Select.Option value="custom">自定义</Select.Option>
-            </Select>
+          {/* 隐藏的table_type字段，固定为custom */}
+          <Form.Item name="table_type" hidden initialValue="custom">
+            <Input />
           </Form.Item>
 
           <Form.Item name="description" label="描述">

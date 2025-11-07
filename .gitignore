@@ -52,6 +52,7 @@ frontend.log
 # 上传文件
 uploads/
 temp/
+wps/
 
 # 测试覆盖率
 .coverage
