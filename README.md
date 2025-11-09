@@ -42,7 +42,6 @@ docker-compose exec backend python init_db.py
 | 文档 | 说明 |
 |------|------|
 | [DEPLOY.md](DEPLOY.md) | 开发环境配置、生产环境部署、常用命令、更新升级 |
-| [NORM.mdc](.cursor/rules/NORM.mdc) | 通用原则、开发规范（命名、目录、Git、API、数据库、代码、安全、性能） |
 | [PROJECT.md](PROJECT.md) | 技术架构、API设计、数据库设计、项目需求、功能模块 |
 | [README.md](README.md) | 项目简介、快速启动、文档导航 |
 
