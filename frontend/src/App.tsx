@@ -2,14 +2,12 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { App as AntdApp } from 'antd'
 import Login from '@/pages/Login'
 import Layout from '@/components/Layout'
-import Dashboard from '@/pages/Dashboard'
+import Home from '@/pages/Home'
+import PlatformData from '@/pages/PlatformData'
 import Shops from '@/pages/Shops'
-import Import from '@/pages/Import'
+import Logs from '@/pages/Logs'
 import Settings from '@/pages/Settings'
 import Profile from '@/pages/Profile'
-import PlatformData from '@/pages/PlatformData'
-import Worksheet from '@/pages/Worksheet'
-import Logs from '@/pages/Logs'
 import PrivateRoute from '@/components/PrivateRoute'
 
 function App() {
@@ -26,12 +24,10 @@ function App() {
               </PrivateRoute>
             }
           >
-            <Route index element={<Dashboard />} />
+            <Route index element={<Home />} />
             <Route path="platform-data" element={<PlatformData />} />
-            <Route path="worksheet" element={<Worksheet />} />
             <Route path="logs" element={<Logs />} />
             <Route path="shops" element={<Shops />} />
-            <Route path="import" element={<Import />} />
             <Route path="settings" element={<Settings />} />
             <Route path="profile" element={<Profile />} />
             {/* 其他路由根据菜单动态配置 */}

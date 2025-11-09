@@ -21,7 +21,5 @@ class Shop(Base):
     # 关系
     manager = relationship("User", backref="managed_shops")
     platform_obj = relationship("Platform", back_populates="shops")
-    products = relationship("ShopProduct", back_populates="shop")
-    sales = relationship("Sale", back_populates="shop")
     data_tables = relationship("DataTable", back_populates="shop")
 

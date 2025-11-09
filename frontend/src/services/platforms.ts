@@ -16,6 +16,7 @@ export interface Platform {
 export interface PlatformShop {
   id: number
   name: string
+  platform_id: number
   account: string
   status: string
   manager_id?: number

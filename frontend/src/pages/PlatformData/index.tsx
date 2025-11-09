@@ -294,15 +294,20 @@ const PlatformData = () => {
   const handleAddShop = (platform?: Platform) => {
     setEditingShop(null)
     shopForm.resetFields()
+    const initialValues: Partial<Shop> & { platform_id?: number; status?: string } = { status: 'active' }
     if (platform) {
-      shopForm.setFieldsValue({ platform: platform.name })
+      initialValues.platform_id = platform.id
     }
+    shopForm.setFieldsValue(initialValues)
     setShopModalVisible(true)
   }
 
   const handleEditShop = (shop: Shop) => {
     setEditingShop(shop)
-    shopForm.setFieldsValue(shop)
+    shopForm.setFieldsValue({
+      ...shop,
+      platform_id: shop.platform_id ?? platforms.find((p) => p.name === shop.platform)?.id,
+    })
     setShopModalVisible(true)
   }
 
@@ -342,7 +347,15 @@ const PlatformData = () => {
   // ========== 数据表管理 ==========
   const handleAddDataTable = (shopNode: any) => {
     setEditingDataTable(null)
-    setCurrentShopForTable({ id: shopNode.id, name: shopNode.name } as Shop)
+    setCurrentShopForTable({
+      id: shopNode.id,
+      name: shopNode.name,
+      platform_id: shopNode.platform_id,
+      platform_name: shopNode.platform_name,
+      status: shopNode.status || 'active',
+      created_at: '',
+      updated_at: '',
+    } as Shop)
     dataTableForm.resetFields()
     dataTableForm.setFieldsValue({ 
       shop_id: shopNode.id,
@@ -770,14 +783,14 @@ const PlatformData = () => {
         onCancel={() => setShopModalVisible(false)}
         width={600}
       >
-        <Form form={shopForm} layout="vertical">
+        <Form form={shopForm} layout="vertical" initialValues={{ status: 'active' }}>
           <Form.Item name="name" label="店铺名称" rules={[{ required: true }]}>
             <Input />
           </Form.Item>
-          <Form.Item name="platform" label="平台" rules={[{ required: true }]}>
+          <Form.Item name="platform_id" label="平台" rules={[{ required: true }]}>
             <Select placeholder="请选择平台">
               {platforms.map((platform) => (
-                <Select.Option key={platform.id} value={platform.name}>
+                <Select.Option key={platform.id} value={platform.id}>
                   {platform.name}
                 </Select.Option>
               ))}

@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react'
 import { Card, Table, Empty, Spin } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
-import { getDataByTableId } from '@/services/dataTable'
+import { queryDataTableData } from '@/services/dataTable'
 
 interface DataTableProps {
   selectedNode: any
@@ -28,13 +28,15 @@ const DataTable = ({ selectedNode, shops, onRefresh, refreshKey = 0 }: DataTable
 
     try {
       setLoading(true)
-      const result = await getDataByTableId(
-        selectedNode.nodeData.id,
-        (page - 1) * pageSize,
-        pageSize
-      )
-      setTableData(result.items)
-      setTotal(result.total)
+      const result = await queryDataTableData({
+        data_table_id: selectedNode.nodeData.id,
+        table_type: selectedNode.nodeData.table_type,
+        shop_id: selectedNode.nodeData.shop_id,
+        skip: (page - 1) * pageSize,
+        limit: pageSize,
+      })
+      setTableData(result.items || [])
+      setTotal(result.total || 0)
     } catch (error) {
       console.error('加载数据失败:', error)
     } finally {
@@ -47,6 +49,12 @@ const DataTable = ({ selectedNode, shops, onRefresh, refreshKey = 0 }: DataTable
       loadTableData()
     }
   }, [selectedNode, page, pageSize, refreshKey])
+
+  useEffect(() => {
+    if (selectedNode?.type === 'data_table') {
+      setPage(1)
+    }
+  }, [selectedNode?.nodeData?.id])
 
   // 动态生成表格列（基于字段配置）
   const generateColumns = (): ColumnsType<any> => {
@@ -123,7 +131,7 @@ const DataTable = ({ selectedNode, shops, onRefresh, refreshKey = 0 }: DataTable
 
     if (selectedNode.type === 'platform') {
       const platformShops = shops.filter(
-        (shop) => shop.platform === selectedNode.nodeData.name
+        (shop) => shop.platform_id === selectedNode.nodeData.id
       )
       return (
         <div>
@@ -142,7 +150,7 @@ const DataTable = ({ selectedNode, shops, onRefresh, refreshKey = 0 }: DataTable
         <div>
           <Card title="店铺信息" size="small" style={{ marginBottom: 16 }}>
             <p><strong>店铺名称：</strong>{selectedNode.nodeData.name}</p>
-            <p><strong>平台：</strong>{selectedNode.nodeData.platform || '-'}</p>
+            <p><strong>平台：</strong>{selectedNode.nodeData.platform_name || '-'}</p>
             <p><strong>店铺账号：</strong>{selectedNode.nodeData.account || '-'}</p>
           </Card>
           <Empty description="请选择数据表查看数据" />
@@ -156,7 +164,7 @@ const DataTable = ({ selectedNode, shops, onRefresh, refreshKey = 0 }: DataTable
           <Table
             columns={generateColumns()}
             dataSource={tableData}
-            rowKey={(record) => record.id || Math.random()}
+            rowKey={(record) => record.id ?? record._id ?? Math.random()}
             pagination={{
               current: page,
               pageSize: pageSize,

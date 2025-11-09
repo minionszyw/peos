@@ -33,15 +33,28 @@ const Sider = ({ collapsed }: SiderProps) => {
   }
 
   // 递归转换菜单数据
+  const allowedPaths = new Set(['/', '/platform-data', '/shops', '/logs', '/settings', '/profile'])
+
   const transformMenuData = (menus: MenuItemType[]): MenuItem[] => {
-    return menus.map(menu => ({
-      key: menu.path || menu.id.toString(),
-      icon: getIcon(menu.icon),
-      label: menu.name,
-      children: menu.children && menu.children.length > 0 
-        ? transformMenuData(menu.children) 
-        : undefined
-    }))
+    return menus
+      .map(menu => {
+        const key = menu.path || menu.id.toString()
+        const children = menu.children && menu.children.length > 0
+          ? transformMenuData(menu.children)
+          : undefined
+        return {
+          key,
+          icon: getIcon(menu.icon),
+          label: menu.name,
+          children,
+        }
+      })
+      .filter(item => {
+        if (item.children && item.children.length > 0) {
+          return true
+        }
+        return allowedPaths.has(item.key as string)
+      })
   }
 
   // 加载菜单数据

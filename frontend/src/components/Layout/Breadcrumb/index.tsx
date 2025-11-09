@@ -7,16 +7,12 @@ import { useLocation, Link } from 'react-router-dom'
 import styles from './index.module.scss'
 
 const breadcrumbNameMap: Record<string, string> = {
-  '/': '数据看板',
+  '/': '首页',
+  '/platform-data': '平台数据',
   '/shops': '店铺管理',
-  '/products': '商品管理',
-  '/products/warehouse': '仓库商品',
-  '/products/shop': '店铺商品',
-  '/products/inventory': '库存管理',
-  '/sales': '销售数据',
-  '/worksheet': '工作表',
-  '/import': '数据导入',
   '/logs': '操作日志',
+  '/settings': '系统设置',
+  '/profile': '个人中心',
 }
 
 const Breadcrumb = () => {

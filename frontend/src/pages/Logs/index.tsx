@@ -82,11 +82,9 @@ const LogsPage = () => {
   // 表名映射
   const tableNameMap: any = {
     shops: '店铺',
-    shop_products: '店铺商品',
-    warehouse_products: '仓库商品',
     users: '用户',
-    dashboards: '看板',
-    worksheets: '工作表',
+    data_tables: '数据表',
+    table_data: '表数据',
   }
 
   // 表格列定义
@@ -183,11 +181,9 @@ const LogsPage = () => {
             onChange={(value) => setFilters({ ...filters, table_name: value })}
             options={[
               { label: '店铺', value: 'shops' },
-              { label: '店铺商品', value: 'shop_products' },
-              { label: '仓库商品', value: 'warehouse_products' },
               { label: '用户', value: 'users' },
-              { label: '看板', value: 'dashboards' },
-              { label: '工作表', value: 'worksheets' },
+              { label: '数据表', value: 'data_tables' },
+              { label: '表数据', value: 'table_data' },
             ]}
           />
           <RangePicker

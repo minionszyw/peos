@@ -10,107 +10,64 @@
 
 ### 快速开始（推荐）🚀
 
-**使用一键启动脚本，自动完成所有配置和启动步骤：**
-
 ```bash
-# 一键启动所有开发服务（前端、后端、数据库）
-./start-dev.sh
-
-# 一键停止所有开发服务
-./stop-dev.sh
+./start-dev.sh    # 启动前端、后端、数据库
+./stop-dev.sh     # 停止所有开发服务
 ```
 
-**脚本功能：**
+**脚本自动完成：**
 
-`start-dev.sh` 会自动执行以下操作：
-- ✓ 检查系统依赖（Docker、Python、Node.js等）
-- ✓ 启动 PostgreSQL 和 Redis 容器
-- ✓ 创建并配置 Python 虚拟环境
-- ✓ 安装后端依赖（包括版本兼容性修复）
-- ✓ 配置环境变量（自动适配本地开发环境）
-- ✓ 初始化数据库和创建管理员账户
-- ✓ 启动后端开发服务器（端口 8000）
-- ✓ 安装前端依赖
-- ✓ 启动前端开发服务器（端口 3000）
+- 依赖检查（Docker、Python、Node.js、npm）
+- 启动 PostgreSQL、Redis 容器
+- 准备 Python 虚拟环境并安装后端依赖
+- 同步 `.env` 配置并初始化数据库（含默认管理员）
+- 启动 FastAPI（端口 8000）和 Vite 前端（端口 3000）
 
-`stop-dev.sh` 会停止所有服务：
-- ✓ 停止前端服务（释放端口 3000）
-- ✓ 停止后端服务（释放端口 8000）
-- ✓ 停止 PostgreSQL 和 Redis 容器
+**访问与日志：**
 
-**启动后访问：**
-- 前端应用：http://localhost:3000
-- 后端API：http://localhost:8000
-- API文档：http://localhost:8000/docs
+- 前端：http://localhost:3000
+- 后端：http://localhost:8000
+- API 文档：http://localhost:8000/docs
 - 默认账号：`admin` / `admin123`
+- 后端日志：`tail -f backend.log`
+- 前端日志：`tail -f frontend.log`
 
-**日志查看：**
-```bash
-# 查看后端日志
-tail -f backend.log
+**注意事项：**
 
-# 查看前端日志
-tail -f frontend.log
-```
+- 确保宿主机未占用 `5432`、`6379` 端口。若系统自带 `redis-server` 正在运行，可执行 `sudo systemctl stop redis-server` 释放端口。
+- 如需修改前后端端口，调整 `backend/.env` 与前端 `vite.config.ts` 后重启脚本。
 
 ---
 
 ### 手动启动（高级）
 
-如果需要单独启动某个服务，可以参考以下步骤：
-
-### 1. 后端开发环境
+#### 后端
 
 ```bash
 cd backend
-
-# 创建虚拟环境
 python -m venv venv
-
-# 激活虚拟环境
-# Linux/Mac:
-source venv/bin/activate
-# Windows:
-# venv\Scripts\activate
-
-# 安装依赖
+source venv/bin/activate      # Windows: venv\Scripts\activate
 pip install -r requirements.txt
-
-# 配置环境变量
-cp .env.example .env
-# 编辑 .env 文件，修改数据库配置等
-
-# 启动数据库和Redis（使用Docker）
+cp .env.example .env          # 按需修改数据库/Redis配置
 docker-compose up -d postgres redis
-
-# 初始化数据库
 python init_db.py
-
-# 启动开发服务器
 uvicorn app.main:app --reload --port 8000
 ```
 
-**访问**: http://localhost:8000  
-**API文档**: http://localhost:8000/docs
+后端运行后，可访问 `http://localhost:8000`，接口文档位于 `http://localhost:8000/docs`。
 
-### 2. 前端开发环境
+#### 前端
 
 ```bash
 cd frontend
-
-# 安装依赖
 npm install
-
-# 配置环境变量（可选）
-cp .env.example .env
-
-# 启动开发服务器
+cp .env.example .env          # 可选
 npm run dev
 ```
 
-**访问**: http://localhost:3000
+访问 `http://localhost:3000` 查看前端页面。
 
-### 3. 数据库迁移
+#### 数据库迁移
 
 ```bash
 # 创建迁移文件
@@ -123,7 +80,6 @@ alembic upgrade head
 alembic downgrade -1
 ```
 
----
 ---
 
 ## 生产环境部署
@@ -303,4 +259,3 @@ npm update
 # 重新构建
 docker-compose build
 ```
-

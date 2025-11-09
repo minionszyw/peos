@@ -30,9 +30,9 @@ async def health_check():
 
 # 导入路由
 from app.api import (
-    auth, shops, import_data,
+    auth, shops,
     settings, menus, platforms,
-    users, dashboard_data, worksheets, logs,
+    users, logs,
     data_tables, data_table_data
 )
 
@@ -49,13 +49,6 @@ app.include_router(platforms.router, prefix="/api/platforms", tags=["平台管�
 app.include_router(shops.router, prefix="/api/shops", tags=["店铺"])
 app.include_router(data_tables.router, prefix="/api/data-tables", tags=["数据表"])
 app.include_router(data_table_data.router, prefix="/api/data-table-data", tags=["数据表数据"])
-app.include_router(import_data.router, prefix="/api/import", tags=["数据导入"])
-
-# 数据看板
-app.include_router(dashboard_data.router, prefix="/api/dashboard-data", tags=["看板数据"])
-
-# 工作表
-app.include_router(worksheets.router, prefix="/api/worksheets", tags=["工作表"])
 
 # 操作日志
 app.include_router(logs.router, prefix="/api/logs", tags=["操作日志"])

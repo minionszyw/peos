@@ -9,11 +9,13 @@ import { Shop, ShopCreate, ShopUpdate } from '@/types/shop'
 import { getShopList, createShop, updateShop, deleteShop } from '@/services/shop'
 import { getUserList } from '@/services/auth'
 import { User } from '@/types/user'
+import { getPlatforms, type Platform } from '@/services/platforms'
 import styles from './index.module.scss'
 
 const Shops = () => {
   const [shops, setShops] = useState<Shop[]>([])
   const [users, setUsers] = useState<User[]>([])
+  const [platforms, setPlatforms] = useState<Platform[]>([])
   const [loading, setLoading] = useState(false)
   const [modalVisible, setModalVisible] = useState(false)
   const [editingShop, setEditingShop] = useState<Shop | null>(null)
@@ -42,18 +44,33 @@ const Shops = () => {
     }
   }
 
+  // 加载平台列表
+  const loadPlatforms = async () => {
+    try {
+      const data = await getPlatforms({ is_active: 1 })
+      setPlatforms(data)
+    } catch (error) {
+      console.error('加载平台列表失败:', error)
+    }
+  }
+
   useEffect(() => {
     loadShops()
     loadUsers()
+    loadPlatforms()
   }, [])
 
   // 打开新建/编辑对话框
   const handleOpenModal = (shop?: Shop) => {
     setEditingShop(shop || null)
     if (shop) {
-      form.setFieldsValue(shop)
+      form.setFieldsValue({
+        ...shop,
+        platform_id: shop.platform_id ?? platforms.find((p) => p.name === shop.platform)?.id,
+      })
     } else {
       form.resetFields()
+      form.setFieldsValue({ status: 'active' })
     }
     setModalVisible(true)
   }
@@ -105,9 +122,10 @@ const Shops = () => {
     },
     {
       title: '平台',
-      dataIndex: 'platform',
-      key: 'platform',
+      dataIndex: 'platform_name',
+      key: 'platform_name',
       width: 120,
+      render: (_: string, record) => record.platform_name || record.platform || '-',
     },
     {
       title: '店铺账号',
@@ -212,17 +230,15 @@ const Shops = () => {
 
           <Form.Item
             label="平台"
-            name="platform"
+            name="platform_id"
             rules={[{ required: true, message: '请选择平台' }]}
           >
-            <Select placeholder="请选择平台">
-              <Select.Option value="淘宝">淘宝</Select.Option>
-              <Select.Option value="京东">京东</Select.Option>
-              <Select.Option value="拼多多">拼多多</Select.Option>
-              <Select.Option value="天猫">天猫</Select.Option>
-              <Select.Option value="抖音">抖音</Select.Option>
-              <Select.Option value="快手">快手</Select.Option>
-              <Select.Option value="其他">其他</Select.Option>
+            <Select placeholder="请选择平台" loading={!platforms.length}>
+              {platforms.map((platform) => (
+                <Select.Option key={platform.id} value={platform.id}>
+                  {platform.name}
+                </Select.Option>
+              ))}
             </Select>
           </Form.Item>
 

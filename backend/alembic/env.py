@@ -13,8 +13,10 @@ from app.core.database import Base
 
 # 导入所有模型，确保它们被注册到Base.metadata
 from app.models import (
-    User, Shop, WarehouseProduct, ShopProduct, Inventory,
-    Sale, OperationLog, Worksheet, Dashboard, ImportHistory
+    User, Shop,
+    OperationLog, Worksheet,
+    SystemSetting, MenuItem, Platform,
+    DataTable, TableData
 )
 
 # Alembic Config对象

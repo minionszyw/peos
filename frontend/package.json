@@ -18,9 +18,7 @@
     "zustand": "^4.4.7",
     "echarts": "^5.4.3",
     "echarts-for-react": "^3.0.2",
-    "dayjs": "^1.11.10",
-    "ahooks": "^3.7.8",
-    "xlsx": "^0.18.5"
+    "dayjs": "^1.11.10"
   },
   "devDependencies": {
     "@types/react": "^18.2.43",

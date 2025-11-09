@@ -1,12 +1,15 @@
 """数据表数据查询API"""
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session, joinedload
-from sqlalchemy import or_, and_
-from typing import List, Dict, Any, Optional
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
+from sqlalchemy import asc, desc
 from app.core.database import get_db
 from app.api.deps import get_current_user
-from app.models import User, DataTable, TableData, Shop
-from app.schemas.data_tables import TableDataCreate, TableDataResponse
+from app.models import User, DataTable, TableData
+from app.schemas.data_tables import (
+    TableDataCreate,
+    TableDataResponse,
+    DataTableDataQuery,
+)
 
 router = APIRouter()
 
@@ -109,7 +112,7 @@ def get_data_by_table_id(
     items_dict = []
     for item in items:
         # 添加ID到数据中
-        data_with_id = {"_id": item.id, **item.data}
+        data_with_id = {"id": item.id, "_id": item.id, **item.data}
         items_dict.append(data_with_id)
     
     return {
@@ -121,51 +124,69 @@ def get_data_by_table_id(
     }
 
 
-@router.get("/shop/{shop_id}/summary")
-def get_shop_data_summary(
-    shop_id: int,
+@router.post("/query")
+def query_table_data(
+    query: DataTableDataQuery,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     """
-    获取店铺数据概览
+    通用数据表查询接口
     """
-    # 验证店铺存在
-    shop = db.query(Shop).filter(Shop.id == shop_id).first()
-    if not shop:
+    table_query = db.query(DataTable).filter(DataTable.table_type == query.table_type)
+
+    if query.shop_id is not None:
+        table_query = table_query.filter(DataTable.shop_id == query.shop_id)
+    if query.data_table_id is not None:
+        table_query = table_query.filter(DataTable.id == query.data_table_id)
+
+    data_table = table_query.order_by(DataTable.sort_order, DataTable.id).first()
+
+    if not data_table:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="店铺不存在"
+            status_code=404,
+            detail="未找到匹配的数据表"
         )
-    
-    # 统计各类数据
-    shop_products_count = db.query(ShopProduct).filter(
-        ShopProduct.shop_id == shop_id
-    ).count()
-    
-    sales_count = db.query(Sale).filter(
-        Sale.shop_id == shop_id
-    ).count()
-    
-    # 获取数据表列表
-    data_tables = db.query(DataTable).filter(
-        DataTable.shop_id == shop_id,
-        DataTable.is_active == 1
-    ).all()
-    
+
+    data_query = db.query(TableData).filter(TableData.data_table_id == data_table.id)
+
+    if query.filters:
+        for field, value in query.filters.items():
+            if value is None:
+                continue
+            data_query = data_query.filter(TableData.data[field].astext == str(value))
+
+    total = data_query.count()
+
+    if query.sort_by:
+        sort_expression = TableData.data[query.sort_by].astext
+        if (query.sort_order or "").lower() == "asc":
+            data_query = data_query.order_by(asc(sort_expression))
+        else:
+            data_query = data_query.order_by(desc(sort_expression))
+    else:
+        data_query = data_query.order_by(TableData.id.desc())
+
+    items = data_query.offset(query.skip).limit(query.limit).all()
+
+    items_dict = []
+    for item in items:
+        payload = dict(item.data)
+        payload["id"] = item.id
+        payload["_id"] = item.id  # 兼容旧字段
+        items_dict.append(payload)
+
     return {
-        "shop_id": shop_id,
-        "shop_name": shop.name,
-        "shop_products_count": shop_products_count,
-        "sales_count": sales_count,
-        "data_tables": [
-            {
-                "id": dt.id,
-                "name": dt.name,
-                "table_type": dt.table_type,
-                "description": dt.description
-            }
-            for dt in data_tables
-        ]
+        "total": total,
+        "items": items_dict,
+        "skip": query.skip,
+        "limit": query.limit,
+        "fields": data_table.fields,
+        "data_table": {
+            "id": data_table.id,
+            "name": data_table.name,
+            "table_type": data_table.table_type,
+            "shop_id": data_table.shop_id,
+        }
     }
 

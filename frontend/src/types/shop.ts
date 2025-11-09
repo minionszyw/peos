@@ -5,7 +5,9 @@
 export interface Shop {
   id: number
   name: string
-  platform: string
+  platform_id?: number
+  platform_name?: string
+  platform?: string
   account?: string
   manager_id?: number
   manager_name?: string
@@ -16,7 +18,7 @@ export interface Shop {
 
 export interface ShopCreate {
   name: string
-  platform: string
+  platform_id: number
   account?: string
   manager_id?: number
   status?: string
@@ -24,7 +26,7 @@ export interface ShopCreate {
 
 export interface ShopUpdate {
   name?: string
-  platform?: string
+  platform_id?: number
   account?: string
   manager_id?: number
   status?: string
@@ -33,7 +35,7 @@ export interface ShopUpdate {
 export interface ShopListParams {
   skip?: number
   limit?: number
-  platform?: string
+  platform_id?: number
   status?: string
 }
 

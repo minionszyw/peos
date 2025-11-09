@@ -36,6 +36,8 @@ def get_data_table_tree(
             id=platform.id,
             name=platform.name,
             type="platform",
+            platform_id=platform.id,
+            platform_name=platform.name,
             children=[]
         )
         
@@ -50,6 +52,9 @@ def get_data_table_tree(
                 id=shop.id,
                 name=shop.name,
                 type="shop",
+                platform_id=platform.id,
+                platform_name=platform.name,
+                status=shop.status,
                 children=[]
             )
             
@@ -65,6 +70,8 @@ def get_data_table_tree(
                     name=data_table.name,
                     type="data_table",
                     table_type=data_table.table_type,
+                    platform_id=platform.id,
+                    platform_name=platform.name,
                     shop_id=data_table.shop_id,
                     is_active=data_table.is_active,
                     fields=data_table.fields,  # 包含字段配置

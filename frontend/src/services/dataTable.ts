@@ -52,6 +52,9 @@ export interface TreeNode {
   fields?: FieldConfig[]  // 字段配置（仅 data_table 类型有）
   description?: string
   sort_order?: number
+  platform_id?: number
+  platform_name?: string
+  status?: string
 }
 
 /**
@@ -106,11 +109,26 @@ export const deleteDataTable = (id: number): Promise<void> => {
  */
 export const queryDataTableData = (params: {
   table_type: string
+  data_table_id?: number
   shop_id?: number
   filters?: any
+  sort_by?: string
+  sort_order?: 'asc' | 'desc'
   skip?: number
   limit?: number
-}): Promise<{ total: number; items: any[]; skip: number; limit: number }> => {
+}): Promise<{
+  total: number
+  items: any[]
+  skip: number
+  limit: number
+  fields?: FieldConfig[]
+  data_table?: {
+    id: number
+    name: string
+    table_type: string
+    shop_id: number
+  }
+}> => {
   return request.post('/data-table-data/query', params)
 }
 
@@ -126,22 +144,3 @@ export const getDataByTableId = (
     params: { skip, limit }
   })
 }
-
-/**
- * 获取店铺数据概览
- */
-export const getShopDataSummary = (shopId: number): Promise<{
-  shop_id: number
-  shop_name: string
-  shop_products_count: number
-  sales_count: number
-  data_tables: Array<{
-    id: number
-    name: string
-    table_type: string
-    description?: string
-  }>
-}> => {
-  return request.get(`/data-table-data/shop/${shopId}/summary`)
-}
-

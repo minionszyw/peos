@@ -14,15 +14,3 @@ class Worksheet(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now(), comment="创建时间")
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), comment="更新时间")
 
-
-class Dashboard(Base):
-    """看板配置模型"""
-    __tablename__ = "dashboards"
-
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, comment="用户ID")
-    name = Column(String(100), nullable=False, comment="看板名称")
-    config_json = Column(JSON, comment="配置JSON：图表类型、数据源等")
-    created_at = Column(DateTime(timezone=True), server_default=func.now(), comment="创建时间")
-    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), comment="更新时间")
-

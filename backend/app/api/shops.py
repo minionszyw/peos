@@ -1,9 +1,10 @@
 """店铺管理API"""
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional
 from app.core.database import get_db
 from app.models.shops import Shop
+from app.models.platforms import Platform
 from app.models.users import User
 from app.schemas.shops import ShopCreate, ShopUpdate, ShopResponse, ShopWithManager
 from app.api.deps import get_current_user
@@ -19,6 +20,14 @@ def create_shop(
     current_user: User = Depends(get_current_user)
 ):
     """创建店铺"""
+    # 校验平台
+    platform = db.query(Platform).filter(Platform.id == shop_data.platform_id).first()
+    if not platform:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="平台不存在",
+        )
+
     # 检查店铺名称是否已存在
     existing_shop = db.query(Shop).filter(Shop.name == shop_data.name).first()
     if existing_shop:
@@ -27,8 +36,14 @@ def create_shop(
             detail="店铺名称已存在",
         )
     
-    # 创建新店铺
-    new_shop = Shop(**shop_data.model_dump())
+    payload = shop_data.model_dump()
+    platform_id = payload.pop("platform_id")
+
+    new_shop = Shop(
+        platform_id=platform_id,
+        platform=platform.name,
+        **payload,
+    )
     db.add(new_shop)
     db.commit()
     db.refresh(new_shop)
@@ -40,18 +55,27 @@ def create_shop(
         action_type="create",
         table_name="shops",
         record_id=new_shop.id,
-        new_value={"name": new_shop.name, "platform": new_shop.platform}
+        new_value={
+            "name": new_shop.name,
+            "platform_id": new_shop.platform_id,
+            "platform": platform.name,
+        }
     )
     
-    return new_shop
+    shop_response = ShopResponse.model_validate(new_shop, from_attributes=True)
+    response_data = shop_response.model_dump()
+    response_data["platform_name"] = platform.name
+    response_data["platform"] = platform.name
+    return ShopResponse(**response_data)
 
 
 @router.get("", response_model=List[ShopWithManager])
 def list_shops(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
-    platform: str = None,
-    status: str = None,
+    platform: Optional[str] = None,
+    platform_id: Optional[int] = None,
+    status: Optional[str] = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -61,6 +85,8 @@ def list_shops(
     # 筛选条件
     if platform:
         query = query.filter(Shop.platform == platform)
+    if platform_id is not None:
+        query = query.filter(Shop.platform_id == platform_id)
     if status:
         query = query.filter(Shop.status == status)
     
@@ -70,6 +96,10 @@ def list_shops(
     result = []
     for shop in shops:
         shop_dict = ShopResponse.from_orm(shop).model_dump()
+        platform_name = shop.platform_obj.name if shop.platform_obj else shop.platform
+        shop_dict["platform_name"] = platform_name
+        # 兼容旧字段
+        shop_dict["platform"] = platform_name
         manager_name = None
         if shop.manager_id:
             manager = db.query(User).filter(User.id == shop.manager_id).first()
@@ -96,6 +126,9 @@ def get_shop(
         )
     
     shop_dict = ShopResponse.from_orm(shop).model_dump()
+    platform_name = shop.platform_obj.name if shop.platform_obj else shop.platform
+    shop_dict["platform_name"] = platform_name
+    shop_dict["platform"] = platform_name
     manager_name = None
     if shop.manager_id:
         manager = db.query(User).filter(User.id == shop.manager_id).first()
@@ -122,10 +155,27 @@ def update_shop(
         )
     
     # 保存旧值
-    old_value = {"name": shop.name, "platform": shop.platform, "status": shop.status}
+    old_value = {
+        "name": shop.name,
+        "platform_id": shop.platform_id,
+        "platform": shop.platform,
+        "status": shop.status,
+    }
     
     # 更新字段
     update_data = shop_data.model_dump(exclude_unset=True)
+
+    if "platform_id" in update_data:
+        new_platform_id = update_data.pop("platform_id")
+        platform = db.query(Platform).filter(Platform.id == new_platform_id).first()
+        if not platform:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="平台不存在",
+            )
+        shop.platform_id = new_platform_id
+        shop.platform = platform.name
+    
     for field, value in update_data.items():
         setattr(shop, field, value)
     
@@ -140,10 +190,20 @@ def update_shop(
         table_name="shops",
         record_id=shop.id,
         old_value=old_value,
-        new_value={"name": shop.name, "platform": shop.platform, "status": shop.status}
+        new_value={
+            "name": shop.name,
+            "platform_id": shop.platform_id,
+            "platform": shop.platform,
+            "status": shop.status,
+        }
     )
     
-    return shop
+    platform_name = shop.platform_obj.name if shop.platform_obj else shop.platform
+    shop_response = ShopResponse.model_validate(shop, from_attributes=True)
+    response_data = shop_response.model_dump()
+    response_data["platform_name"] = platform_name
+    response_data["platform"] = platform_name
+    return ShopResponse(**response_data)
 
 
 @router.delete("/{shop_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -161,7 +221,11 @@ def delete_shop(
         )
     
     # 保存旧值用于日志
-    old_value = {"name": shop.name, "platform": shop.platform}
+    old_value = {
+        "name": shop.name,
+        "platform_id": shop.platform_id,
+        "platform": shop.platform,
+    }
     
     db.delete(shop)
     db.commit()

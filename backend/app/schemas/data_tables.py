@@ -58,6 +58,9 @@ class DataTableTreeNode(BaseModel):
     fields: Optional[List[FieldConfig]] = None  # 字段配置（仅 data_table 类型有）
     description: Optional[str] = None  # 描述
     sort_order: Optional[int] = None  # 排序
+    platform_id: Optional[int] = None
+    platform_name: Optional[str] = None
+    status: Optional[str] = None  # 店铺状态
     
     class Config:
         from_attributes = True
@@ -85,6 +88,9 @@ class DataTableDataQuery(BaseModel):
     table_type: str = Field(..., description="表类型")
     shop_id: Optional[int] = Field(None, description="店铺ID")
     filters: Optional[Dict[str, Any]] = Field(None, description="筛选条件")
+    data_table_id: Optional[int] = Field(None, description="数据表ID")
+    sort_by: Optional[str] = Field(None, description="排序字段")
+    sort_order: Optional[str] = Field(None, description="排序方向 asc/desc")
     skip: int = Field(0, ge=0, description="跳过记录数")
     limit: int = Field(20, ge=1, le=100, description="返回记录数")
 

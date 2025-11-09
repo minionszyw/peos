@@ -68,6 +68,7 @@ def get_platform_shops(
     return [{
         "id": shop.id,
         "name": shop.name,
+        "platform_id": shop.platform_id,
         "account": shop.account,
         "status": shop.status,
         "manager_id": shop.manager_id,
