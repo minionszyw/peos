@@ -33,15 +33,12 @@ const Sider = ({ collapsed }: SiderProps) => {
   }
 
   // 递归转换菜单数据
-  const allowedPaths = new Set(['/', '/platform-data', '/shops', '/logs', '/settings', '/profile'])
-
   const transformMenuData = (menus: MenuItemType[]): MenuItem[] => {
     return menus
-      .map(menu => {
+      .map((menu) => {
         const key = menu.path || menu.id.toString()
-        const children = menu.children && menu.children.length > 0
-          ? transformMenuData(menu.children)
-          : undefined
+        const children =
+          menu.children && menu.children.length > 0 ? transformMenuData(menu.children) : undefined
         return {
           key,
           icon: getIcon(menu.icon),
@@ -49,11 +46,11 @@ const Sider = ({ collapsed }: SiderProps) => {
           children,
         }
       })
-      .filter(item => {
-        if (item.children && item.children.length > 0) {
-          return true
-        }
-        return allowedPaths.has(item.key as string)
+      .filter((item) => {
+        const hasChildren = Array.isArray(item.children) && item.children.length > 0
+        const key = item.key as string
+        const isNavigable = typeof key === 'string' && key.startsWith('/')
+        return hasChildren || isNavigable
       })
   }
 
@@ -89,7 +86,9 @@ const Sider = ({ collapsed }: SiderProps) => {
   }, [])
 
   const handleMenuClick: MenuProps['onClick'] = ({ key }) => {
-    navigate(key)
+    if (typeof key === 'string' && key.startsWith('/')) {
+      navigate(key)
+    }
   }
 
   return (

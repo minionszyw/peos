@@ -1,5 +1,9 @@
 # 项目文档
 
+## 原则规范
+- general.mdc
+- norm.mdc
+
 ## 技术架构
 
 ### 前端技术栈
@@ -71,8 +75,8 @@ RESTful架构，遵循标准HTTP方法和状态码。
    - 数据表数据：`GET /data-table-data/{id}/data`，`POST /data-table-data/{id}/data`，`DELETE /data-table-data/{id}/data/{data_id}`，`POST /data-table-data/query`
    - 状态：平台/店铺/数据表链路已贯通，`POST /data-table-data/query` 提供统一查询能力。
 
-4. 工作表格（保留后端模型，前端暂未接入）
-   - 相关 API 在下线过程中，暂不提供。
+4. 工作表格（前端提供占位页，核心功能待开发）
+   - 相关 API 在下线过程中，可在前端查看功能规划提示。
 
 5. 数据看板（保留统计需求，接口暂时停用）
    - 原 `/api/dashboard-data` 系列接口暂无实现。

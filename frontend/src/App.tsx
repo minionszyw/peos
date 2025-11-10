@@ -8,6 +8,7 @@ import Shops from '@/pages/Shops'
 import Logs from '@/pages/Logs'
 import Settings from '@/pages/Settings'
 import Profile from '@/pages/Profile'
+import Worksheet from '@/pages/Worksheet'
 import PrivateRoute from '@/components/PrivateRoute'
 
 function App() {
@@ -25,6 +26,7 @@ function App() {
             }
           >
             <Route index element={<Home />} />
+            <Route path="worksheet" element={<Worksheet />} />
             <Route path="platform-data" element={<PlatformData />} />
             <Route path="logs" element={<Logs />} />
             <Route path="shops" element={<Shops />} />

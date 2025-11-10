@@ -2,7 +2,7 @@
  * 平台数据管理页面（整合平台管理 + 店铺管理 + 数据表管理 + 数据导入）
  */
 import { useState, useEffect } from 'react'
-import { Row, Col, Tree, Button, Space, Modal, Form, Input, Select, message, Tag, Tooltip, Card, Upload, Alert } from 'antd'
+import { Row, Col, Tree, Button, Space, Modal, Form, Input, Select, message, Tag, Card, Upload, Alert } from 'antd'
 import type { DataNode } from 'antd/es/tree'
 import type { UploadProps } from 'antd'
 import {
@@ -716,14 +716,6 @@ const PlatformData = () => {
           <div className={styles.treePanel}>
             <div className={styles.treeHeader}>
               <h3>平台与店铺</h3>
-              <Tooltip title="新建平台">
-                <Button
-                  type="text"
-                  size="small"
-                  icon={<PlusOutlined />}
-                  onClick={handleAddPlatform}
-                />
-              </Tooltip>
             </div>
             <Tree
               showLine
